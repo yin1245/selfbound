@@ -1,0 +1,288 @@
+{
+  "gpt-5.5": {
+    "bbh": {
+      "per_task": {
+        "boolean_expressions": {
+          "acc": 1.0,
+          "correct": 15,
+          "n": 15
+        },
+        "causal_judgement": {
+          "acc": 0.667,
+          "correct": 10,
+          "n": 15
+        },
+        "date_understanding": {
+          "acc": 0.467,
+          "correct": 7,
+          "n": 15
+        },
+        "logical_deduction_five_objects": {
+          "acc": 1.0,
+          "correct": 15,
+          "n": 15
+        },
+        "navigate": {
+          "acc": 1.0,
+          "correct": 15,
+          "n": 15
+        },
+        "object_counting": {
+          "acc": 1.0,
+          "correct": 15,
+          "n": 15
+        },
+        "ruin_names": {
+          "acc": 0.933,
+          "correct": 14,
+          "n": 15
+        },
+        "sports_understanding": {
+          "acc": 0.8,
+          "correct": 12,
+          "n": 15
+        },
+        "tracking_shuffled_objects_three_objects": {
+          "acc": 1.0,
+          "correct": 15,
+          "n": 15
+        },
+        "word_sorting": {
+          "acc": 1.0,
+          "correct": 15,
+          "n": 15
+        }
+      },
+      "zs": {
+        "boolean_expressions": 0.95,
+        "causal_judgement": 0.85,
+        "date_understanding": 0.85,
+        "logical_deduction_five_objects": 0.9,
+        "navigate": 0.85,
+        "object_counting": 0.9,
+        "ruin_names": 0.75,
+        "sports_understanding": 0.9,
+        "tracking_shuffled_objects_three_objects": 0.85,
+        "word_sorting": 0.9
+      },
+      "zs_raw": "boolean_expressions: 95\ncausal_judgement: 85\ndate_understanding: 85\nlogical_deduction_5: 90\nnavigate: 85\nobject_counting: 90\nruin_names: 75\nsports_understanding: 90\ntracking_shuffled_3: 85\nword_sorting: 90",
+      "cbf": 0.85,
+      "n_tasks_matched": 10,
+      "failures": 0
+    },
+    "mmlu_pro": {
+      "per_cat": {
+        "math": {
+          "acc": 0.933,
+          "correct": 14,
+          "n": 15
+        },
+        "physics": {
+          "acc": 1.0,
+          "correct": 15,
+          "n": 15
+        },
+        "chemistry": {
+          "acc": 0.867,
+          "correct": 13,
+          "n": 15
+        },
+        "law": {
+          "acc": 0.8,
+          "correct": 12,
+          "n": 15
+        },
+        "engineering": {
+          "acc": 0.8,
+          "correct": 12,
+          "n": 15
+        },
+        "economics": {
+          "acc": 0.933,
+          "correct": 14,
+          "n": 15
+        },
+        "health": {
+          "acc": 0.867,
+          "correct": 13,
+          "n": 15
+        },
+        "psychology": {
+          "acc": 0.8,
+          "correct": 12,
+          "n": 15
+        },
+        "business": {
+          "acc": 0.8,
+          "correct": 12,
+          "n": 15
+        },
+        "history": {
+          "acc": 0.8,
+          "correct": 12,
+          "n": 15
+        }
+      },
+      "zs": {
+        "math": 0.72,
+        "physics": 0.7,
+        "chemistry": 0.72,
+        "law": 0.76,
+        "engineering": 0.68,
+        "economics": 0.78,
+        "health": 0.76,
+        "psychology": 0.82,
+        "business": 0.82,
+        "history": 0.8
+      },
+      "zs_raw": "math: 72\nphysics: 70\nchemistry: 72\nlaw: 76\nengineering: 68\neconomics: 78\nhealth: 76\npsychology: 82\nbusiness: 82\nhistory: 80",
+      "cbf": 0.888,
+      "n_cats_matched": 10,
+      "failures": 0
+    },
+    "wall_time_s": 2084.8
+  },
+  "claude-opus-4-7": {
+    "bbh": {
+      "per_task": {
+        "boolean_expressions": {
+          "acc": 0.867,
+          "correct": 13,
+          "n": 15
+        },
+        "causal_judgement": {
+          "acc": 0.8,
+          "correct": 12,
+          "n": 15
+        },
+        "date_understanding": {
+          "acc": 0.867,
+          "correct": 13,
+          "n": 15
+        },
+        "logical_deduction_five_objects": {
+          "acc": 1.0,
+          "correct": 15,
+          "n": 15
+        },
+        "navigate": {
+          "acc": 0.933,
+          "correct": 14,
+          "n": 15
+        },
+        "object_counting": {
+          "acc": 0.6,
+          "correct": 9,
+          "n": 15
+        },
+        "ruin_names": {
+          "acc": 0.933,
+          "correct": 14,
+          "n": 15
+        },
+        "sports_understanding": {
+          "acc": 0.867,
+          "correct": 13,
+          "n": 15
+        },
+        "tracking_shuffled_objects_three_objects": {
+          "acc": 0.533,
+          "correct": 8,
+          "n": 15
+        },
+        "word_sorting": {
+          "acc": 0.933,
+          "correct": 14,
+          "n": 15
+        }
+      },
+      "zs": {
+        "boolean_expressions": 0.95,
+        "causal_judgement": 0.65,
+        "date_understanding": 0.85,
+        "logical_deduction_five_objects": 0.9,
+        "navigate": 0.9,
+        "object_counting": 0.95,
+        "ruin_names": 0.75,
+        "sports_understanding": 0.9,
+        "tracking_shuffled_objects_three_objects": 0.95,
+        "word_sorting": 0.9
+      },
+      "zs_raw": "boolean_expressions: 95\ncausal_judgement: 65\ndate_understanding: 85\nlogical_deduction_5: 90\nnavigate: 90\nobject_counting: 95\nruin_names: 75\nsports_understanding: 90\ntracking_shuffled_3: 95\nword_sorting: 90",
+      "cbf": 0.86,
+      "n_tasks_matched": 10,
+      "failures": 0
+    },
+    "mmlu_pro": {
+      "per_cat": {
+        "math": {
+          "acc": 0.867,
+          "correct": 13,
+          "n": 15
+        },
+        "physics": {
+          "acc": 0.733,
+          "correct": 11,
+          "n": 15
+        },
+        "chemistry": {
+          "acc": 0.733,
+          "correct": 11,
+          "n": 15
+        },
+        "law": {
+          "acc": 0.8,
+          "correct": 12,
+          "n": 15
+        },
+        "engineering": {
+          "acc": 0.667,
+          "correct": 10,
+          "n": 15
+        },
+        "economics": {
+          "acc": 0.867,
+          "correct": 13,
+          "n": 15
+        },
+        "health": {
+          "acc": 0.714,
+          "correct": 10,
+          "n": 14
+        },
+        "psychology": {
+          "acc": 0.733,
+          "correct": 11,
+          "n": 15
+        },
+        "business": {
+          "acc": 0.8,
+          "correct": 12,
+          "n": 15
+        },
+        "history": {
+          "acc": 0.733,
+          "correct": 11,
+          "n": 15
+        }
+      },
+      "zs": {
+        "math": 0.78,
+        "physics": 0.8,
+        "chemistry": 0.72,
+        "law": 0.6,
+        "engineering": 0.65,
+        "economics": 0.82,
+        "health": 0.72,
+        "psychology": 0.85,
+        "business": 0.78,
+        "history": 0.75
+      },
+      "zs_raw": "math: 78\nphysics: 80\nchemistry: 72\nlaw: 60\nengineering: 65\neconomics: 82\nhealth: 72\npsychology: 85\nbusiness: 78\nhistory: 75",
+      "cbf": 0.941,
+      "n_cats_matched": 10,
+      "failures": 1
+    },
+    "wall_time_s": 1378.4
+  }
+}

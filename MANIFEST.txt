@@ -1,0 +1,16 @@
+CapBoundary-Bench v1.0.0 - Anonymous submission bundle
+======================================================
+Total turn-records:     37500
+Per-model session JSONL: 15 files
+Aggregate-metric files:  15 files
+Held-out n=6 control:   1 file
+Code modules:           code/baselines/ + code/scripts/
+Paper PDF:              paper/CapBoundary-Bench.pdf
+Croissant metadata:     croissant.json (validated v1.0)
+Total bundle size:      92K
+
+Anonymization status:
+- All file paths rewritten to ./capbound-bench/
+- All API keys redacted (sk-REDACTED)
+- All endpoint URLs redacted (REDACTED_URL)
+- Author/organization names absent from code comments and PDF
