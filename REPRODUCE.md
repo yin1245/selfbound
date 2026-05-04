@@ -1,4 +1,4 @@
-# Reproducing CapBoundary-Bench
+# Reproducing SelfBound
 
 End-to-end reproduction of the headline `50×50` MMLU corpus on 15 models.
 
