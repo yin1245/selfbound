@@ -1,5 +1,8 @@
 \documentclass[11pt]{article}
 \PassOptionsToPackage{numbers,sort&compress}{natbib}
+\newcommand{\answerYes}[1][]{\textbf{[Yes]}#1}
+\newcommand{\answerNo}[1][]{\textbf{[No]}#1}
+\newcommand{\answerNA}[1][]{\textbf{[NA]}#1}
 \usepackage[eandd]{neurips_2026}
 
 \usepackage[utf8]{inputenc}
@@ -34,7 +37,7 @@
 % ABSTRACT
 %==============================================================================
 \begin{abstract}
-We benchmark whether LLM agents can build a domain-level self-model of their own reliability from noisy user feedback, and find that the open bottleneck is \emph{noise-robust second-order online inference}. Production agents accumulate no per-domain reliability self-model, even as their users empirically build one. We introduce \textbf{CapBoundary-Bench}, a diagnostic benchmark that operationalizes three competing hypotheses about where this self-knowledge fails---H1 output channel, H2 prior metacognition, H3 noise-robust online inference---through a five-level information ladder (L0 raw confidence $\to$ L1 zero-shot prior $\to$ L2 noisy-feedback learners $\to$ L3 binary-label oracle $\to$ L4 full-statistic oracle). Across 15 models from 7 families and 47{,}000+ interactions on a 50$\times$50 protocol with cross-family simulated users (75\% in-expertise / 46\% out), we evaluate \textbf{Capability Boundary Fidelity (CBF)}, an L1 measure of per-domain estimation that complements per-query calibration metrics like ECE. Three findings: H1 does not bind (GT-SelfStats $\geq 0.99$ on every model); H2 splits by family---the zero-shot prior wins on GPT but falls below NoMemory on all three Claude models (frontier mean CBF 0.640); H3 is partially refuted---first-order single-rater L2 methods cluster near NoMemory, while second-order Dawid--Skene-asym (mean CBF 0.755), GLAD (0.712, beating L1 on 6/6 frontier models, $p=0.031$), and in-context LLMSelfAssess (0.748) substantially exceed the L1 prior. A protocol-controlled extension subset shows 12/15 sign-flip rate across task families, establishing per-task boundary modeling as structurally necessary.
+We benchmark whether LLM agents can build a domain-level self-model of their own reliability from noisy user feedback, and find that the open bottleneck is \emph{noise-robust second-order online inference}. Production agents accumulate no per-domain reliability self-model, even as their users empirically build one. We introduce \textbf{CapBoundary-Bench}, a diagnostic benchmark that operationalizes three competing hypotheses about where this self-knowledge fails---H1 output channel, H2 prior metacognition, H3 noise-robust online inference---through a five-level information ladder (L0 raw confidence $\to$ L1 zero-shot prior $\to$ L2 noisy-feedback learners $\to$ L3 binary-label oracle $\to$ L4 full-statistic oracle). Across 15 models from 7 families and 47{,}000+ interactions on a 50$\times$50 protocol with cross-family simulated users (75\% in-expertise / 46\% out), we evaluate \textbf{Capability Boundary Fidelity (CBF)}, an L1 measure of per-domain estimation that complements per-query calibration metrics like ECE. Three findings: H1 does not bind (GT-SelfStats $\geq 0.99$ on every model); H2 splits by family---the zero-shot prior wins on GPT but falls below NoMemory on all three Claude models (frontier mean CBF 0.640); H3 is partially refuted---first-order single-rater L2 methods cluster near NoMemory, while second-order Dawid--Skene-asym (mean CBF 0.755), GLAD (0.712, beating L1 on 6/6 frontier models, $p=0.031$), and in-context LSA (0.748) substantially exceed the L1 prior. A protocol-controlled extension suite shows 12/15 sign-flip rate across task families, establishing per-task boundary modeling as structurally necessary.
 \end{abstract}
 
 %==============================================================================
@@ -45,7 +48,7 @@ We benchmark whether LLM agents can build a domain-level self-model of their own
 
 LLM agents now operate in long-horizon, multi-turn settings where the same model interacts with the same user across hundreds of turns---as customer-service bots, coding assistants, research aides, or tool-using agents. Users develop an empirical sense of what each agent is good at and where it tends to fail. The agent itself, however, retains no analogous self-model: each session starts without prior calibration, and every prior calibration experience is discarded. Prior work documents this asymmetry, but the underlying \emph{capability gap} is poorly understood---we still do not know \emph{where} agent self-modeling actually fails.
 
-\paragraph{Three competing hypotheses about where self-knowledge fails.} Prior work identifies the problem but does not isolate its locus. \citet{barkan2026capable} (ICLR 2026) show that frontier LLMs cannot reliably predict their own task success and that overconfidence \emph{worsens} as agents proceed through multi-step tasks; \citet{hu2026memoryagent} (ICLR 2026) identify four memory competencies in MemoryAgentBench but none target endogenous self-knowledge. Calibration research~\citep{kadavath2022language, guo2017calibration, xiong2024can} evaluates per-query confidence; recent memory systems~\citep{packer2023memgpt, mem02025, tan2025rmm, xu2025amem, li2025memos} store dialogue and preferences. None of this work identifies \emph{which} sub-capability is broken. Existing evaluations conflate three bottlenecks:
+\paragraph{Three competing hypotheses about where self-knowledge fails.} Prior work identifies the problem but does not isolate its locus. \citet{barkan2026capable} show that frontier LLMs cannot reliably predict their own task success and that overconfidence \emph{worsens} as agents proceed through multi-step tasks; \citet{hu2026memoryagent} identify four memory competencies in MemoryAgentBench but none target endogenous self-knowledge. Calibration research~\citep{kadavath2022language, guo2017calibration, xiong2024can} evaluates per-query confidence; recent memory systems~\citep{packer2023memgpt, mem02025, tan2025rmm, xu2025amem, li2025memos} store dialogue and preferences. None of this work identifies \emph{which} sub-capability is broken. Existing evaluations conflate three bottlenecks:
 
 \begin{itemize}[nosep,leftmargin=1.2em]
   \item H1 (Output channel). The model is unable to numerically format and emit per-domain statistics.
@@ -61,20 +64,23 @@ Across 15 models from 7 families and 47{,}000+ interactions, our results separat
 
 \begin{itemize}[nosep,leftmargin=1.2em]
   \item H1 does not limit performance in this protocol. GT-SelfStats reaches CBF $\geq 0.99$ on every model when the per-domain statistics are placed directly in the prompt: the output channel is not the constraint.
-  \item H2 holds for GPT models but not for Claude models. Under the cleaned 50$\times$50 protocol, zero-shot self-knowledge (no interaction, no feedback) attains a frontier-mean CBF of 0.640 (n=6), but with a sharp split: ZS-SK is the strongest L0--L2 baseline on GPT-5.4 (0.795) and reaches the benchmark's highest individual value of 0.859 on GPT-5.5, yet on all three Claude models it falls below NoMemory (0.460--0.482 vs. NoMem 0.557--0.603). \emph{LLMSelfAssess (LSA), the in-context L2 baseline, now leads on the frontier with mean CBF 0.748}, winning on 4/6 frontier models and reaching 0.902 on GPT-5.5. For weak models (Mistral-7B/Llama-3-8B), the prior is partial and NoMem dominates.
+  \item H2 holds for GPT models but not for Claude models. Under the cleaned 50$\times$50 protocol, zero-shot self-knowledge (no interaction, no feedback) attains a frontier-mean CBF of 0.640 (n=6), but with a sharp split: ZS-SK is the strongest L0--L2 baseline on GPT-5.4 (0.795) and reaches the benchmark's highest individual value of 0.859 on GPT-5.5, yet on all three Claude models it falls below NoMemory (0.460--0.482 vs. NoMem 0.557--0.603). \emph{LSA, the in-context L2 baseline, now leads on the frontier with mean CBF 0.748}, winning on 4/6 frontier models and reaching 0.902 on GPT-5.5. For weak models (Mistral-7B/Llama-3-8B), the prior is partial and NoMem dominates.
   \item H3 is partially confirmed and refined. \emph{First-order} single-rater methods (UF-PDC, Platt, HistBin, Bayes, simple EM-Joint) cluster near NoMem on frontier (mean 0.628--0.634). \emph{Second-order} methods reach mean CBF Dawid-Skene-asym 0.755 and GLAD 0.712 across all 6 frontier models, exceeding the L1 ZS mean (0.640) by $+$0.115 and $+$0.072 respectively. GLAD now beats L1 on \emph{all} 6/6 frontier models (Wilcoxon two-sided $p=0.031$, binomial one-sided $p=0.016$). The L2-vs-L3 gap remains, but second-order methods reduce it: first-order single-rater methods systematically underperform; second-order estimators close most of the gap on every frontier model, with DS-asym the strongest single L2 baseline.
 \end{itemize}
 
-Feedback helps some models and hurts others (LSA wins 7/15, ZS 5/15, 3 ties; on frontier 4--2 favoring LSA), and we analyze a parameter-free selection rule R4 as a benchmark-validation diagnostic (\S\ref{sec:bottleneck}, Appendix~\ref{app:r4}). Capability boundaries also do not transfer across task types (12/15 sign-flip rate within the protocol-controlled extension subset; Appendix~\ref{app:proto_controlled}), making per-task boundary modeling structurally necessary. CapBoundary-Bench does not propose a new self-modeling method---it isolates noise-robust second-order inference as the open problem and provides the diagnostic infrastructure to evaluate future solutions.
+Feedback helps some models and hurts others (LSA wins 7/15, ZS 5/15, 3 ties; on frontier 4--2 favoring LSA), and we analyze a parameter-free selection rule R4 as a benchmark-validation diagnostic (\S\ref{sec:bottleneck}, Appendix~\ref{app:r4}). Capability boundaries also do not transfer across task types (12/15 sign-flip rate within the protocol-controlled extension suite; Appendix~\ref{app:proto_controlled}), making per-task boundary modeling structurally necessary. CapBoundary-Bench does not propose a new self-modeling method---it isolates noise-robust second-order inference as the open problem and provides the diagnostic infrastructure to evaluate future solutions.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig1_overview.pdf}
-\caption{\textbf{CapBoundary-Bench overview.} \textbf{(A)}~Session protocol: 50 turns per session, with questions drawn from 20 MMLU domains (green = correct, red = wrong); all 15 models use the unified 50$\times$50 main protocol. \textbf{(B)}~Single turn detail: an MMLU question is answered by the LLM agent with a confidence score; the simulated user provides domain-dependent feedback (75\% reliable in-expertise, 46\% out); an LLM-based decoder extracts the signal; the self-knowledge memory is updated per-domain. \textbf{(C)}~The five-level baseline ladder: from raw confidence (L0) to a zero-shot prior (L1) to noisy-feedback learning (L2) to binary-label oracle (L3) to full-statistic oracle (L4). All five levels are evaluated per-model with the end-of-session CBF; their ordering reveals which sub-capability is the actual bottleneck.}
+\caption{\textbf{The L0--L4 baseline ladder localizes where agent self-knowledge fails.} L4$\approx$L3$\approx$1.0 rules out the output channel (H1); the L2$\to$L3 gap of $\sim$0.30 isolates noise-robust online inference (H3) as the bottleneck. \textbf{(A)}~Session protocol: 50 sessions $\times$ 50 turns over 20 MMLU domains. \textbf{(B)}~Single turn: the agent answers with confidence, the cross-family simulated user gives noisy feedback (75\% reliable in-expertise, 46\% out), and an LLM decoder updates the per-domain self-model. \textbf{(C)}~The ladder: L0 raw confidence $\to$ L1 zero-shot prior $\to$ L2 noisy-feedback learners $\to$ L3 binary-label oracle $\to$ L4 full-statistic oracle. Adjacent comparisons isolate sub-capabilities.}
 \label{fig:overview}
 \end{figure*}
 
 Beyond the headline diagnostic, we report a methodological side-finding relevant to any benchmark using LLM-simulated users: when the same model is used as both agent and user simulator, a \emph{dual-role bias} emerges in which shared politeness conventions degrade feedback decoding. We mitigate this confound through cross-family simulator selection and report the effect quantitatively as a contribution to the design of future LLM-simulated benchmarks.
+
+\paragraph{Contributions.} (1) The H1/H2/H3 hypothesis decomposition that separates output-channel, prior-metacognition, and noise-robust-inference accounts of agent self-knowledge failure; (2) the L0--L4 baseline ladder that operationalizes them via oracle bracketing; (3) Capability Boundary Fidelity (CBF), a per-domain self-assessment metric complementary to per-query calibration; (4) systematic evaluation across 15 models showing H1 does not bind, H2 family-splits between GPT and Claude, and H3 is partially refuted by second-order estimators (DS-asym, GLAD) and in-context aggregation (LSA); (5) a fully reproducible release of code, 47K-turn JSONL traces, Croissant metadata, and the diagnostic ladder protocol.
+
 
 %==============================================================================
 % 2  RELATED WORK
@@ -121,7 +127,7 @@ Static knowledge-boundary benchmarks~\citep{li2025knowledge_boundary, yin2024ben
 \section{CapBoundary-Bench: Probing Self-Knowledge Memory under Noisy Feedback}
 \label{sec:benchmark}
 
-CapBoundary-Bench evaluates a single capability: given a stream of $(q_t, a_t, c_t, f_t)$ tuples over $T$ turns---a question $q_t$ from a hidden domain $d_t$, the agent's answer $a_t$ with confidence $c_t \in [0,1]$, and a natural-language user feedback $f_t$---can the agent build a function $\hat{p}: \mathcal{D} \to [0,1]$ that closely approximates its true per-domain accuracy $p^*(d)$? The benchmark instantiates this question via a 50$\times$50 protocol (50 sessions $\times$ 50 turns per session = 2{,}500 turns per model) drawing from 20 MMLU subjects~\citep{hendrycks2021measuring} partitioned per model into Strong/Medium/Weak tiers relative to that model's own accuracy distribution. The user is simulated by a cross-family LLM (avoiding the dual-role bias of Appendix~\ref{app:dual_role}) parameterised by an expertise set $\mathcal{E} \subset \mathcal{D}$ with empirically calibrated reliabilities of $\sim$75\% in-expertise and $\sim$46\% out, and we additionally construct three extension suites---GSM8K, HumanEval, BFCL tool-calling---to test cross-task generalisation (Appendix~\ref{app:fourtask}). Full task formalisation, session protocol, question-pool partitioning, and persona parameterisation are deferred to Appendix~\ref{app:bench_details}.
+CapBoundary-Bench evaluates a single capability: given a stream of $(q_t, a_t, c_t, f_t)$ tuples over $T$ turns---a question $q_t$ from a hidden domain $d_t$, the agent's answer $a_t$ with confidence $c_t \in [0,1]$, and a natural-language user feedback $f_t$---can the agent build a function $\hat{p}: \mathcal{D} \to [0,1]$ that closely approximates its true per-domain accuracy $p^*(d)$? The benchmark instantiates this question via a 50$\times$50 protocol (50 sessions $\times$ 50 turns per session = 2{,}500 turns per model) drawing from 20 MMLU subjects~\citep{hendrycks2021measuring} partitioned per model into Strong/Medium/Weak tiers relative to that model's own accuracy distribution. The user is simulated by a cross-family LLM (avoiding the dual-role bias of Appendix~\ref{app:dual_role}) parameterised by an expertise set $\mathcal{E} \subset \mathcal{D}$ with empirically calibrated reliabilities of $\sim$75\% in-expertise and $\sim$46\% out, and we additionally construct three extension tasks (GSM8K, HumanEval, BFCL tool-calling) collectively called the \emph{extension suite}---to test cross-task generalisation (Appendix~\ref{app:fourtask}). Full task formalisation, session protocol, question-pool partitioning, and persona parameterisation are deferred to Appendix~\ref{app:bench_details}.
 
 \paragraph{Capability Boundary Fidelity (CBF).} Our central metric scores how closely the agent's self-assessed per-domain accuracy tracks the truth:
 \begin{equation}
@@ -136,13 +142,13 @@ CBF is computed once per session at the end of the 50-turn protocol (we do not t
   \widetilde{\text{CBF}}(m, \text{method}) \;=\; \frac{\text{CBF}_{\text{method}}(m) - \text{CBF}_{\text{NoMem}}(m)}{\text{CBF}_{\text{Oracle}}(m) - \text{CBF}_{\text{NoMem}}(m)},
   \label{eq:adj_cbf}
 \end{equation}
-where $\text{CBF}_{\text{NoMem}}(m)$ uses the model's verbalized confidence (which empirically clusters near $0.5$ on the trivial domains) as the constant-baseline anchor, and $\text{CBF}_{\text{Oracle}}(m) \!\geq\! 0.99$ is the L3 OraclePDC ceiling. Values are interpretable as ``fraction of L0$\to$L3 gap closed'': $\widetilde{\text{CBF}}=1$ matches oracle, $0$ ties the trivial baseline, $<0$ underperforms the trivial baseline. We report $\widetilde{\text{CBF}}$ as the primary metric for cross-model means and ladder-headline comparisons (\S\ref{sec:results}), and use raw CBF only as a within-model diagnostic. We additionally report Hallucination Rate, ECE, and Brier as auxiliary calibration metrics; their definitions follow \citet{guo2017calibration} and are given in Appendix~\ref{app:bench_details}. \emph{Domain-structure note}: CBF requires a multi-domain task. For single-domain extension tasks (GSM8K, HumanEval, BFCL) we report only ECE and confidence--accuracy gap; the cross-task analysis in Appendix~\ref{app:fourtask} uses these standard metrics. \emph{Cross-model comparability note}: The 20 MMLU subjects are partitioned into Strong/Medium/Weak tiers \emph{relative to each model's own held-out validation accuracy} so that every model faces a non-trivial cross-domain spread. CBF is therefore a within-model diagnostic; cross-model means reported throughout (e.g., 0.685 for ZeroShot-SK across all 15 models in Table~\ref{tab:main}) summarize per-model values that were each computed against the model's own $p^*(d)$, and are appropriate for comparing \emph{methods within the diagnostic ladder}, not for ranking models on absolute capability. We expand on this design choice and confirm headline conclusions are unchanged under an alternative absolute-cutoff partition in Appendix~\ref{app:bench_details}.
+where $\text{CBF}_{\text{NoMem}}(m)$ uses the model's verbalized confidence (which empirically clusters near $0.5$ on the trivial domains) as the constant-baseline anchor, and $\text{CBF}_{\text{Oracle}}(m) \!\geq\! 0.99$ is the L3 OraclePDC ceiling. Values are interpretable as ``fraction of L0$\to$L3 gap closed'': $\widetilde{\text{CBF}}=1$ matches oracle, $0$ ties the trivial baseline, $<0$ underperforms the trivial baseline. We report $\widetilde{\text{CBF}}$ as the primary metric for cross-model means and ladder-headline comparisons (\S\ref{sec:results}), and use raw CBF only as a within-model diagnostic. We additionally report Hallucination Rate, ECE, and Brier as auxiliary calibration metrics; their definitions follow \citet{guo2017calibration} and are given in Appendix~\ref{app:bench_details}. \emph{Domain-structure note}: CBF requires a multi-domain task. For single-domain extension tasks (GSM8K, HumanEval, BFCL) we report only ECE and confidence--accuracy gap; the cross-task analysis in Appendix~\ref{app:fourtask} uses these standard metrics. \emph{Cross-model comparability note}: The 20 MMLU subjects are partitioned into Strong/Medium/Weak tiers \emph{relative to each model's own held-out validation accuracy} so that every model faces a non-trivial cross-domain spread. CBF is therefore a within-model diagnostic; cross-model means reported throughout (e.g., 0.685 for ZS-SK across all 15 models in Table~\ref{tab:main}) summarize per-model values that were each computed against the model's own $p^*(d)$, and are appropriate for comparing \emph{methods within the diagnostic ladder}, not for ranking models on absolute capability. We expand on this design choice and confirm headline conclusions are unchanged under an alternative absolute-cutoff partition in Appendix~\ref{app:bench_details}.
 
 \paragraph{Baselines: a five-level diagnostic ladder.} We evaluate ten baselines organized as a ladder of \emph{information access}, designed so that comparing adjacent levels isolates a specific sub-capability:
 \begin{itemize}[nosep,leftmargin=1.4em]
   \item \textbf{L0 (raw):} \emph{NoMemory}---verbalized confidence with no memory, the stateless anchor.
-  \item \textbf{L1 (prior only):} \emph{ZeroShot-SK}---the agent is asked, with no session history and no feedback, to estimate its own per-domain accuracy directly; this measures \emph{prior metacognition}.
-  \item \textbf{L2 (learning from noisy feedback):} \emph{LLMSelfAssess} (in-context reasoning over session history), \emph{UF-PDC} (LLM-decoded per-domain counting), \emph{Platt-Online}~\citep{platt1999probabilistic}, \emph{HistBin-Online}~\citep{zadrozny2001obtaining}, \emph{Bayes-Domain} (Beta posterior per domain), and \emph{EM-Joint} (joint estimation of $\hat{p}(d)$ and $\hat{r}(d)$). These differ in their inference machinery but all consume the same noisy feedback stream.
+  \item \textbf{L1 (prior only):} \emph{ZS-SK} (ZeroShot Self-Knowledge)---the agent is asked, with no session history and no feedback, to estimate its own per-domain accuracy directly; this measures \emph{prior metacognition}.
+  \item \textbf{L2 (learning from noisy feedback):} \emph{LSA} (LLMSelfAssess; in-context reasoning over session history), \emph{UF-PDC} (LLM-decoded per-domain counting), \emph{Platt-Online}~\citep{platt1999probabilistic}, \emph{HistBin-Online}~\citep{zadrozny2001obtaining}, \emph{Bayes-Domain} (Beta posterior per domain), and \emph{EM-Joint} (joint estimation of $\hat{p}(d)$ and $\hat{r}(d)$). These differ in their inference machinery but all consume the same noisy feedback stream.
   \item \textbf{L3 (binary-label oracle):} \emph{OraclePDC}---per-turn ground-truth correctness labels, with the agent computing per-domain running averages. Tests whether the agent could build a self-model \emph{if feedback were clean}.
   \item \textbf{L4 (format-channel sanity ceiling):} \emph{GT-SelfStats}---the agent is given $p^*(d)$ directly in the prompt and asked to emit them in the structured response format. This is a sanity check that the L2 gap cannot be attributed to an inability to format and emit per-domain statistics. We do not claim it tests verbalization-of-self-knowledge.
 \end{itemize}
@@ -158,7 +164,7 @@ All feedback decoding (L2 + UF-PDC) uses an LLM-based decoder rather than rule-b
 \subsection{Setup}
 \label{sec:setup}
 
-We evaluate fifteen models from seven families spanning 42--90\% MMLU accuracy (Appendix~\ref{app:api_versions}). Each model--baseline pair runs 2,500 turns (50 sessions $\times$ 50 turns under the cleaned 50$\times$50 protocol); user personas are simulated by a cross-family LLM with three expertise domains; answer extraction uses a lenient multi-strategy parser tolerant of free-form responses to avoid truncating reasoning models. Feedback decoding for all L2 baselines uses an LLM-based decoder (more aligned with the ``self-knowledge boundary'' setting than rule-based matching, and avoiding the rule-classifier coverage as a confound). Open-weights models (Mistral-7B, Llama-3-8B) are served via vLLM from pinned snapshots and serve as the reproducibility anchor; API access dates, simulator-routing rules, and the parser specification are deferred to Appendix~\ref{app:api_versions}.
+We evaluate fifteen models from seven families spanning 42--90\% MMLU accuracy (Appendix~\ref{app:api_versions}). Each model--baseline pair runs 2,500 turns (50 sessions $\times$ 50 turns under the cleaned 50$\times$50 protocol); user personas are simulated by a cross-family LLM with three expertise domains\footnote{Frontier-set scope: 6 model endpoints (3 GPT, 3 Claude): GPT-5.4, GPT-5.4-mini, GPT-5.5, Claude-Opus-4-6, Claude-Sonnet-4-6, Claude-Opus-4-7. Main-table within-tier means, MMLU-Pro and BBH contamination controls (Appendix~\ref{app:heldout}, \ref{app:heldout_bbh}), and Dawid--Skene/GLAD cross-model analysis all use this $n{=}6$ scope. $n{=}6$ BBH and MMLU-Pro CBF means are 0.811 and 0.849 (vs.\ MMLU ZS 0.640).}; answer extraction uses a lenient multi-strategy parser tolerant of free-form responses to avoid truncating reasoning models. Feedback decoding for all L2 baselines uses an LLM-based decoder (more aligned with the ``self-knowledge boundary'' setting than rule-based matching, and avoiding the rule-classifier coverage as a confound). Open-weights models (Mistral-7B, Llama-3-8B) are served via vLLM from pinned snapshots and serve as the reproducibility anchor; API access dates, simulator-routing rules, and the parser specification are deferred to Appendix~\ref{app:api_versions}.
 
 \subsection{Main Results}
 \label{sec:results}
@@ -212,13 +218,13 @@ Three diagnostic patterns dominate Table~\ref{tab:main}: (i) algorithmic L2 meth
 GT-SelfStats reaches CBF $\geq 0.992$ on every one of the 15 models (worst gap to perfection 0.008 on Claude-Sonnet-4-6). When the true per-domain statistics are placed in the prompt, every tested model can format and emit them: the L2--L1 gap is not located in the output channel.
 
 \paragraph{H2 splits cleanly by model family: GPT well-calibrated, Claude inflated.}
-The within-tier means in Table~\ref{tab:main} make the picture sharp: across all 6 frontier models under the cleaned 50$\times$50 protocol, LLMSelfAssess (LSA) averages CBF 0.748 vs.\ ZeroShot-SK's 0.640 and the best algorithmic L2 method's 0.634 (UF-PDC)---a $+$0.108 margin of LSA over ZS that flips the previous 10$\times$50 result on Claude. LSA wins on Claude-Sonnet-4-6 (0.720), Claude-Opus-4-6 (0.680), Claude-Opus-4-7 (0.641), and GPT-5.5 (0.902, the highest non-oracle value of any model in the benchmark); ZS wins on GPT-5.4 (0.795) and GPT-5.4-mini (0.769), where ZS estimates are well-calibrated. The 4--2 split favoring LSA on the frontier (mean LSA 0.748 vs ZS 0.640, $+$0.108) is driven entirely by the three Claude models, where ZS estimates are systematically inflated relative to true per-domain accuracy and fall \emph{below} both NoMem and the algorithmic L2 cluster. LSA, by contrast, exceeds all algorithmic L2 methods on \emph{every} frontier row (smallest margin: $+$0.048 on Claude-Opus-4-7 vs UF-PDC). ZS sees \emph{no} session history, \emph{no} feedback. The 50$\times$50 update places ZS first on the strong-mid tier (n=3): tier mean 0.744 (ZS) vs.\ 0.717 (best L2: EM-Joint). However, individual outcomes are split: ZS wins on Qwen-Plus (0.735 vs LSA 0.435 catastrophic failure); LSA wins on Qwen-Max (0.781 vs ZS 0.766, +0.015); Qwen3.5-27B is a three-way tie at 0.731 (NoMem = ZS = LSA). For mid-tier models the prior is partial; for the weakest models the prior matches NoMemory exactly (Mistral, GLM-5: ZS = NoMem = trivial $\hat p \approx 0.5$ anchor). The bottleneck location is therefore agent-dependent: for frontier and strong-mid agents the prior \emph{is} the answer; for mid-tier agents EM-Joint and LSA tie modestly above the prior; for weak agents both prior and feedback inference are uninformative and the trivial $\hat{p}=0.5$ NoMemory anchor wins by default.
+The within-tier means in Table~\ref{tab:main} make the picture sharp: across all 6 frontier models under the cleaned 50$\times$50 protocol, LSA averages CBF 0.748 vs.\ ZS-SK's 0.640 and the best algorithmic L2 method's 0.634 (UF-PDC)---a $+$0.108 margin of LSA over ZS that flips the previous 10$\times$50 result on Claude. LSA wins on Claude-Sonnet-4-6 (0.720), Claude-Opus-4-6 (0.680), Claude-Opus-4-7 (0.641), and GPT-5.5 (0.902, the highest non-oracle value of any model in the benchmark); ZS wins on GPT-5.4 (0.795) and GPT-5.4-mini (0.769), where ZS estimates are well-calibrated. The 4--2 split favoring LSA on the frontier (mean LSA 0.748 vs ZS 0.640, $+$0.108) is driven entirely by the three Claude models, where ZS estimates are systematically inflated relative to true per-domain accuracy and fall \emph{below} both NoMem and the algorithmic L2 cluster. LSA, by contrast, exceeds all algorithmic L2 methods on \emph{every} frontier row (smallest margin: $+$0.048 on Claude-Opus-4-7 vs UF-PDC). ZS sees \emph{no} session history, \emph{no} feedback. The 50$\times$50 update places ZS first on the strong-mid tier (n=3): tier mean 0.744 (ZS) vs.\ 0.717 (best L2: EM-Joint). However, individual outcomes are split: ZS wins on Qwen-Plus (0.735 vs LSA 0.435 catastrophic failure); LSA wins on Qwen-Max (0.781 vs ZS 0.766, +0.015); Qwen3.5-27B is a three-way tie at 0.731 (NoMem = ZS = LSA). For mid-tier models the prior is partial; for the weakest models the prior matches NoMemory exactly (Mistral, GLM-5: ZS = NoMem = trivial $\hat p \approx 0.5$ anchor). The bottleneck location is therefore agent-dependent: for frontier and strong-mid agents the prior \emph{is} the answer; for mid-tier agents EM-Joint and LSA tie modestly above the prior; for weak agents both prior and feedback inference are uninformative and the trivial $\hat{p}=0.5$ NoMemory anchor wins by default.
 
 \paragraph{H3 partially refuted: second-order estimators and in-context aggregation break the L1 prior on frontier models.}
-The five \emph{first-order} L2 feedback-learning methods (UF-PDC, Platt-Online, HistBin-Online, Bayes-Domain, EM-Joint) cluster tightly in 0.69--0.72 mean CBF and fail to exceed L1 ZS on the frontier (mean L2 0.628--0.634 vs L1 ZS 0.640). However, three classes of methods \emph{do} exceed the L1 prior on frontier (n=6): GLAD reaches mean CBF 0.712 (Wilcoxon $p=0.031$, 6/6 wins, binomial $p=0.016$, Cohen's $d=1.42$), DS-asym 0.755 (Wilcoxon one-sided $p=0.047$, 5/6 wins, $d=1.66$), and LSA 0.748 (mean $+$0.108, 4/6 wins, Wilcoxon $p=0.156$ inflated by GPT models where ZS is well-calibrated). GLAD's improvement is consistent in direction across the 6 frontier models (per-model deltas $+0.028$ to $+0.118$; bootstrap 95\% CI of the mean delta $[+0.045,\,+0.099]$ from 10K resamples; full per-model breakdown in Appendix~\ref{app:power}). With six paired observations, we read this as a direction-of-effect test rather than a population-level magnitude estimate. On non-frontier tiers, EM-Joint emerges as the leader (mid $+0.012$ over NoMem; weak $+0.006$), winning outright on Llama-3-8B (0.732) and Qwen2.5-7B (0.753). The original H3 framing (``noisy-feedback online inference is the bottleneck'') therefore stands only for first-order single-rater estimators; the actual bottleneck under the cleaned 50$\times$50 protocol is the residual L2-vs-L3 gap of $\approx 0.20$ between the strongest second-order method (DS-asym 0.755) and OraclePDC (1.000). The 50$\times$50 protocol also reveals that several previously-best L2 baselines from the 10$\times$50 sample were within sampling noise of NoMemory; sample-size matters.
+The five \emph{first-order} L2 feedback-learning methods (UF-PDC, Platt-Online, HistBin-Online, Bayes-Domain, EM-Joint) cluster tightly in 0.69--0.72 mean CBF and fail to exceed L1 ZS on the frontier (mean L2 0.628--0.634 vs L1 ZS 0.640). However, three classes of methods \emph{do} exceed the L1 prior on frontier (n=6): GLAD reaches mean CBF 0.712 (6/6 wins; Wilcoxon $p=0.031$, binomial $p=0.016$, Cohen's $d=1.42$; with $n{=}6$ these are direction-of-effect tests, not population-magnitude estimates), DS-asym 0.755 (5/6 wins; Wilcoxon one-sided $p=0.047$, $d=1.66$), and LSA 0.748 (mean $+$0.108, 4/6 wins, Wilcoxon $p=0.156$ inflated by GPT models where ZS is well-calibrated). GLAD's improvement is consistent in direction across the 6 frontier models (per-model deltas $+0.028$ to $+0.118$; bootstrap 95\% CI of the mean delta $[+0.045,\,+0.099]$ from 10K resamples; full per-model breakdown in Appendix~\ref{app:power}). With six paired observations, we read this as a direction-of-effect test rather than a population-level magnitude estimate. On non-frontier tiers, EM-Joint emerges as the leader (mid $+0.012$ over NoMem; weak $+0.006$), winning outright on Llama-3-8B (0.732) and Qwen2.5-7B (0.753). The original H3 framing (``noisy-feedback online inference is the bottleneck'') therefore stands only for first-order single-rater estimators; the actual bottleneck under the cleaned 50$\times$50 protocol is the residual L2-vs-L3 gap of $\approx 0.20$ between the strongest second-order method (DS-asym 0.755) and OraclePDC (1.000). The 50$\times$50 protocol also reveals that several previously-best L2 baselines from the 10$\times$50 sample were within sampling noise of NoMemory; sample-size matters.
 
 \paragraph{Capability spectrum and best-baseline assignment.}
-With the cleaned protocol (Table~\ref{tab:main}), the ``best'' non-oracle baseline per row (column ``Best'' in Table~\ref{tab:main}, defined as the argmax across the 8 baseline columns L0 NoMem + L1 ZS + 6$\times$L2) splits three ways across 15 models: LLMSelfAssess wins on 6 (DeepSeek-V3.2, Qwen-Max, GPT-5.5, Claude-Sonnet-4-6, Claude-Opus-4-6, Claude-Opus-4-7), EM-Joint wins on 5 (Mistral-7B, Llama-3-8B, GLM-5, Qwen2.5-7B, Qwen3.5-27B---note that on Mistral-7B the EM--NoMem--ZS--LSA spread is within $\pm 0.003$, so the EM win is essentially a tie with the trivial $\hat{p}\approx 0.5$ anchor), and ZeroShot-SK wins on 4 (Qwen-Turbo, Qwen-Plus, GPT-5.4-mini, GPT-5.4). NoMemory does not strictly win on any model under this argmax. \emph{Note:} the ``feedback as friend or foe'' analysis in Appendix~\ref{app:friend_or_foe} uses the orthogonal head-to-head ZS-vs-LSA criterion (only those two baselines, ignoring NoMem/EM); a model can therefore appear under ``LSA-dominant best-of-8'' here yet ``ZS-wins-over-LSA'' in the head-to-head, since the criteria differ.
+With the cleaned protocol (Table~\ref{tab:main}), the ``best'' non-oracle baseline per row (column ``Best'' in Table~\ref{tab:main}, defined as the argmax across the 8 baseline columns L0 NoMem + L1 ZS + 6$\times$L2) splits three ways across 15 models: LSA wins on 6 (DeepSeek-V3.2, Qwen-Max, GPT-5.5, Claude-Sonnet-4-6, Claude-Opus-4-6, Claude-Opus-4-7), EM-Joint wins on 5 (Mistral-7B, Llama-3-8B, GLM-5, Qwen2.5-7B, Qwen3.5-27B---note that on Mistral-7B the EM--NoMem--ZS--LSA spread is within $\pm 0.003$, so the EM win is essentially a tie with the trivial $\hat{p}\approx 0.5$ anchor), and ZS-SK wins on 4 (Qwen-Turbo, Qwen-Plus, GPT-5.4-mini, GPT-5.4). NoMemory does not strictly win on any model under this argmax. \emph{Note:} the ``feedback as friend or foe'' analysis in Appendix~\ref{app:friend_or_foe} uses the orthogonal head-to-head ZS-vs-LSA criterion (only those two baselines, ignoring NoMem/EM); a model can therefore appear under ``LSA-dominant best-of-8'' here yet ``ZS-wins-over-LSA'' in the head-to-head, since the criteria differ.
 
 \paragraph{Adaptive selection diagnostic R4.} The capability split above admits a simple parameter-free selection rule, R4: \emph{pick L1 (ZS) when $\text{ZS}(m){>}\text{NoMem}(m)$, otherwise pick L2 (LSA)}. R4 attains mean CBF 0.722 across $n{=}15$, closing $\approx 72\%$ of the always-ZS-to-per-model-oracle gap on the L1/L2 mixture family. Its per-model sign tests against always-ZS ($p{=}0.22$) and always-LSA ($p{=}0.69$) are non-significant, indicating that R4 redistributes wins across models rather than dominating either single baseline. We use R4 as a diagnostic anchor for the L1/L2 family, analogous to probing classifiers~\citep{tenney2019bertology} or influence functions~\citep{koh2017influence}; the empirical frontier ceiling remains DS-asym at CBF 0.755. Full LOOCV, per-model breakdown, and sign-test arithmetic are in Appendix~\ref{app:r4}.
 
@@ -237,7 +243,7 @@ Figure~\ref{fig:ladder} reveals that the bottleneck is not the output channel (L
 
 The vertical structure isolates each sub-capability. \textbf{L4 vs L3 ($<$1\% gap):} the output channel is not the constraint (H1 ruled out). \textbf{L3 vs L2 ($\sim$0.30 gap):} the empirical bottleneck---given clean labels agents reach 1.0, but no method recovers the signal from noisy LLM-decoded feedback (H3 confirmed). L2 vs L1 (n=15: 0.674--0.686 vs 0.685; n=6 frontier: 0.628--0.634 vs 0.640): L1 ZS ties or exceeds the algorithmic L2 cluster, while only second-order L2 estimators (DS-asym 0.755, GLAD 0.712) and in-context LSA (0.748) exceed L1 on the frontier (Appendix~\ref{app:friend_or_foe}, \ref{app:ds_glad}).
 
-\paragraph{Cross-task heterogeneity.} Across MMLU, GSM8K, HumanEval, and BFCL the same model exhibits qualitatively different calibration regimes: 12/15 models exhibit Gap-sign reversals across the protocol-controlled extension subset (GSM8K/HumanEval/BFCL on the same single-shot two-step protocol), and a Platt scaling learned on MMLU \emph{harms} GSM8K for the majority of models. Per-task boundary modeling is therefore a structural necessity, not a convenience. Full per-task table, controlled-protocol subset analysis, and Platt-transfer details: Appendix~\ref{app:proto_controlled} and Table~\ref{tab:fourtask_overview}.
+\paragraph{Cross-task heterogeneity.} Across MMLU, GSM8K, HumanEval, and BFCL the same model exhibits qualitatively different calibration regimes: 12/15 models exhibit Gap-sign reversals across the protocol-controlled extension suite (GSM8K/HumanEval/BFCL on the same single-shot two-step protocol), and a Platt scaling learned on MMLU \emph{harms} GSM8K for the majority of models. Per-task boundary modeling is therefore a structural necessity, not a convenience. Full per-task table, controlled-protocol subset analysis, and Platt-transfer details: Appendix~\ref{app:proto_controlled} and Table~\ref{tab:fourtask_overview}.
 
 \section{Limitations and Future Work}
 \label{sec:limitations}
@@ -252,7 +258,7 @@ The vertical structure isolates each sub-capability. \textbf{L4 vs L3 ($<$1\% ga
 \section{Conclusion}
 \label{sec:conclusion}
 
-CapBoundary-Bench operationalizes three competing hypotheses about where LLM agent self-knowledge fails (H1 verbalization, H2 prior metacognition, H3 noise-robust online inference) through a five-level baseline ladder. Across 15 models from 7 families and 47{,}000+ interactions, the results support three conclusions: H1 does not bind (GT-SelfStats $\geq 0.99$); \textbf{H2 family-split} (n=15 ZS mean 0.685, n=6 frontier 0.640: GPT-5.4 0.795 and GPT-5.5 0.859 win, all Claude rows fall below NoMem); H3 partially refuted (first-order L2 methods cluster near NoMem on frontier; second-order DS-asym reaches 0.755, GLAD 0.712 with 6/6 frontier wins, $p=0.031$; in-context LSA reaches 0.748). Closing the L2-to-oracle CBF gap remains open; cross-task experiments (12/15 sign flips in the protocol-controlled subset) further establish that per-task boundary modeling is necessary in this benchmark. CapBoundary-Bench does not introduce a new estimator; it isolates noise-robust second-order online inference as the open problem and provides the diagnostic infrastructure to evaluate future solutions, with R4 (Appendix~\ref{app:r4}) as a benchmark-validation lower bound any new method should clear.
+CapBoundary-Bench operationalizes three competing hypotheses about where LLM agent self-knowledge fails (H1 verbalization, H2 prior metacognition, H3 noise-robust online inference) through a five-level baseline ladder. Across 15 models from 7 families and 47{,}000+ interactions, the results support three conclusions: H1 does not bind (GT-SelfStats $\geq 0.99$); H2 family-split (n=15 ZS mean 0.685, n=6 frontier 0.640: GPT-5.4 0.795 and GPT-5.5 0.859 win, all Claude rows fall below NoMem); H3 partially refuted (first-order L2 methods cluster near NoMem on frontier; second-order DS-asym reaches 0.755, GLAD 0.712 with 6/6 frontier wins, $p=0.031$; in-context LSA reaches 0.748). Closing the L2-to-oracle CBF gap remains open; cross-task experiments (12/15 sign flips in the protocol-controlled subset) further establish that per-task boundary modeling is necessary in this benchmark. CapBoundary-Bench does not introduce a new estimator; it isolates noise-robust second-order online inference as the open problem and provides the diagnostic infrastructure to evaluate future solutions, with R4 (Appendix~\ref{app:r4}) as a benchmark-validation lower bound any new method should clear.
 
 %==============================================================================
 % ACKNOWLEDGMENTS
@@ -265,10 +271,100 @@ CapBoundary-Bench operationalizes three competing hypotheses about where LLM age
 %==============================================================================
 
 
-\noindent$^\ddagger$\emph{Frontier-set scope key. The frontier set comprises 6 model endpoints (3 GPT, 3 Claude): GPT-5.4, GPT-5.4-mini, GPT-5.5, Claude-Opus-4-6, Claude-Sonnet-4-6, Claude-Opus-4-7. Main-table within-tier means, MMLU-Pro and BBH contamination controls (Appendix~\ref{app:heldout}, \ref{app:heldout_bbh}), and Dawid--Skene/GLAD cross-model analysis all use this n=6 scope. Under the cleaned 50$\times$50 protocol, GLAD beats L1 ZS on all 6 frontier models (n=6 mean: GLAD 0.712 vs L1 ZS 0.640); n=6 BBH and MMLU-Pro CBF means are 0.811 and 0.849 (vs.\ MMLU ZS 0.640), reinforcing the contamination-control conclusion on the expanded sample.}
+
 
 \bibliographystyle{plainnat}
 \bibliography{references}
+
+
+
+%==============================================================================
+% NEURIPS PAPER CHECKLIST
+%==============================================================================
+\section*{NeurIPS Paper Checklist}
+
+\begin{enumerate}
+\item {\bf Claims}\\
+\textbf{Question}: Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?\\
+\textbf{Answer}: \answerYes{}\\
+\textbf{Justification}: Abstract and \S\ref{sec:intro} state the H1/H2/H3 decomposition, the L0--L4 ladder, the CBF metric, and the empirical findings (H1 does not bind, H2 family-splits, H3 partially refuted). All claims are supported by the experiments in \S\ref{sec:results}--\S\ref{sec:bottleneck} and the appendices.
+
+\item {\bf Limitations}\\
+\textbf{Question}: Does the paper discuss the limitations of the work performed by the authors?\\
+\textbf{Answer}: \answerYes{}\\
+\textbf{Justification}: \S\ref{sec:limitations} discusses scope, n=6 frontier sample, validity of L1 channel, simulated-user limits, and pending human-feedback validation.
+
+\item {\bf Theory Assumptions and Proofs}\\
+\textbf{Question}: For each theoretical result, does the paper provide the full set of assumptions and a complete (and correct) proof?\\
+\textbf{Answer}: \answerNA{}\\
+\textbf{Justification}: The paper is empirical/diagnostic; it does not introduce new theoretical results.
+
+\item {\bf Experimental Result Reproducibility}\\
+\textbf{Question}: Does the paper fully disclose all the information needed to reproduce the main experimental results?\\
+\textbf{Answer}: \answerYes{}\\
+\textbf{Justification}: Full protocol (50$\times$50), persona parameterisation, baseline algorithms, and decoder configuration are in \S\ref{sec:benchmark} and Appendix~\ref{app:bench_details}, \ref{app:baselines}. Open-weights models (Mistral-7B, Llama-3-8B) anchor reproducibility via pinned HF commits.
+
+\item {\bf Open Access to Data and Code}\\
+\textbf{Question}: Does the paper provide open access to the data and code, with sufficient instructions to faithfully reproduce the main experimental results?\\
+\textbf{Answer}: \answerYes{}\\
+\textbf{Justification}: Code, 47K-turn JSONL traces, per-model domain profiles, and Croissant metadata released in the anonymized repository (URL in OpenReview submission fields).
+
+\item {\bf Experimental Setting/Details}\\
+\textbf{Question}: Does the paper specify all the training and test details necessary to understand the results?\\
+\textbf{Answer}: \answerYes{}\\
+\textbf{Justification}: Setup, model versions, API access dates, decoder, parser specification, and per-baseline hyperparameters are documented in \S\ref{sec:setup}, Appendix~\ref{app:bench_details}, \ref{app:baselines}, \ref{app:api_versions}.
+
+\item {\bf Experiment Statistical Significance}\\
+\textbf{Question}: Does the paper report error bars suitably and correctly?\\
+\textbf{Answer}: \answerYes{}\\
+\textbf{Justification}: Bootstrap 95\% CIs, Wilcoxon and binomial tests, Cohen's $d$, and per-model bootstrap stability are reported in \S\ref{sec:results}, Appendix~\ref{app:power}, \ref{app:stat_rob}. The n=6 frontier statistics are explicitly framed as direction-of-effect tests.
+
+\item {\bf Experiments Compute Resources}\\
+\textbf{Question}: For each experiment, does the paper provide sufficient information on the computer resources?\\
+\textbf{Answer}: \answerYes{}\\
+\textbf{Justification}: Open-weights inference uses vLLM on a single A6000 (48GB); API calls are documented in Appendix~\ref{app:api_versions} with access dates. Total compute: $\approx 47$K LLM calls across 15 models $\times$ 10 baselines.
+
+\item {\bf Code of Ethics}\\
+\textbf{Question}: Does the research conducted in the paper conform, in every respect, with the NeurIPS Code of Ethics?\\
+\textbf{Answer}: \answerYes{}\\
+\textbf{Justification}: No human subjects; no personally identifiable data; uses public benchmarks (MMLU, GSM8K, HumanEval, BFCL) under their respective licenses with attribution.
+
+\item {\bf Broader Impacts}\\
+\textbf{Question}: Does the paper discuss both potential positive societal impacts and negative societal impacts of the work performed?\\
+\textbf{Answer}: \answerYes{}\\
+\textbf{Justification}: Improving LLM agent self-knowledge supports safer deployment in long-horizon settings (positive); however, advances in self-modeling could also be exploited to mask uncertainty in adversarial contexts (\S\ref{sec:limitations}).
+
+\item {\bf Safeguards}\\
+\textbf{Question}: Does the paper describe safeguards that have been put in place for responsible release of data?\\
+\textbf{Answer}: \answerNA{}\\
+\textbf{Justification}: Released artifacts contain only LLM outputs on public benchmarks; no high-risk content.
+
+\item {\bf Licenses for Existing Assets}\\
+\textbf{Question}: Are the creators or original owners of assets used in the paper, properly credited and are the license and terms of use explicitly mentioned and respected?\\
+\textbf{Answer}: \answerYes{}\\
+\textbf{Justification}: MMLU (MIT), GSM8K (MIT), HumanEval (MIT), BFCL (Apache-2.0) attributed in \S\ref{sec:benchmark} and the data hosting documentation.
+
+\item {\bf New Assets}\\
+\textbf{Question}: Are new assets introduced in the paper well documented and is the documentation provided alongside the assets?\\
+\textbf{Answer}: \answerYes{}\\
+\textbf{Justification}: Code released under MIT, dataset under CC-BY-4.0; Croissant metadata, README, MANIFEST, and per-baseline algorithm documentation included.
+
+\item {\bf Crowdsourcing and Research with Human Subjects}\\
+\textbf{Question}: For crowdsourcing experiments and research with human subjects, does the paper include the full text of instructions given to participants?\\
+\textbf{Answer}: \answerNA{}\\
+\textbf{Justification}: No human subjects; the simulated user is an LLM persona (full prompt template in Appendix~\ref{app:bench_details}).
+
+\item {\bf Institutional Review Board (IRB) Approvals or Equivalent}\\
+\textbf{Question}: Does the paper describe potential risks incurred by study participants, and obtain appropriate IRB approvals?\\
+\textbf{Answer}: \answerNA{}\\
+\textbf{Justification}: No human subjects.
+
+\item {\bf Declaration of LLM usage}\\
+\textbf{Question}: Does the paper describe the usage of LLMs?\\
+\textbf{Answer}: \answerYes{}\\
+\textbf{Justification}: LLMs are the subject of the benchmark and serve as agents, simulated users, and feedback decoders; full configuration documented in \S\ref{sec:benchmark}, Appendix~\ref{app:api_versions}.
+\end{enumerate}
+
 
 %==============================================================================
 % APPENDIX
@@ -322,7 +418,7 @@ Released artifacts under a dual SPDX license: code under MIT, data under CC-BY-4
 Semantic over the protocol: v3 (50$\times$50) is current; v2 (10$\times$50) supported as lite. Question pool versioning is independent.
 
 \subsection*{Leaderboard Hosting}
-HuggingFace Spaces leaderboard at placeholder URL \url{https://huggingface.co/spaces/anonymous/capboundary-leaderboard} (anonymised; live URL on acceptance). CBF and ancillary metrics (ECE, Brier, AUROC, HR) auto-recomputed from submitted JSONL via the public scorer script in the repo.
+A HuggingFace Spaces leaderboard (URL released on acceptance). CBF and ancillary metrics (ECE, Brier, AUROC, HR) auto-recomputed from submitted JSONL via the public scorer script in the repo.
 
 \subsection*{Submission Protocol}
 PR-based. Each submission must include:
@@ -482,8 +578,8 @@ We also bumped the LLM-call \texttt{max\_tokens} from 20 to 200 for the legitima
 We instantiate ten baselines, organized by the five-level diagnostic ladder of \S\ref{sec:benchmark}.
 
 \paragraph{L0 --- NoMemory (B1).} Raw verbalised confidence with no state. Lower bound on memory-augmented methods.
-\paragraph{L1 --- ZeroShot-SK (B11).} The agent is prompted, \emph{without} session history and \emph{without} any user feedback, to estimate its own per-domain accuracy directly: ``For each of the following 20 MMLU subjects, estimate your accuracy on a 0--100 scale.'' This isolates prior metacognition.
-\paragraph{L2 --- LLMSelfAssess (B6).} Session history (50 (Q, A, confidence, decoded-feedback) tuples) appended to the prompt; agent reasons in-context and outputs per-domain $\hat p(d)$ at the end of the session.
+\paragraph{L1 --- ZS-SK (B11).} The agent is prompted, \emph{without} session history and \emph{without} any user feedback, to estimate its own per-domain accuracy directly: ``For each of the following 20 MMLU subjects, estimate your accuracy on a 0--100 scale.'' This isolates prior metacognition.
+\paragraph{L2 --- LSA (B6).} Session history (50 (Q, A, confidence, decoded-feedback) tuples) appended to the prompt; agent reasons in-context and outputs per-domain $\hat p(d)$ at the end of the session.
 \paragraph{L2 --- UF-PDC (B3).} Per-domain accuracy estimate updated with labels decoded from natural-language feedback by an LLM-based classifier (Qwen-Max, prompted to output a binary correctness judgment for each (Q, A, feedback) triple).
 \paragraph{L2 --- Platt-Online (B7)~\citep{platt1999probabilistic}.} Logistic recalibration $\sigma(w c_{\text{raw}} + b)$ with online gradient descent on log-loss whenever decoded feedback is available; per-domain confidence is then aggregated.
 \paragraph{L2 --- HistBin-Online (B8)~\citep{zadrozny2001obtaining}.} 10-bin histogram binning with online updates; per-domain confidence aggregated as for Platt.
@@ -492,7 +588,7 @@ We instantiate ten baselines, organized by the five-level diagnostic ladder of \
 \paragraph{L3 --- OraclePDC (B2).} Per-domain accuracy estimate updated with ground-truth labels after each turn. Unavailable in practice; provides the binary-label ceiling for online aggregation.
 \paragraph{L4 --- GT-SelfStats (B12).} The true per-domain accuracy $p^*(d)$ is provided in the prompt and the agent is asked to repeat them. Tests purely the verbalization sub-capability.
 
-\paragraph{Design-point mapping.} The five-level ladder is designed to subsume the design points of published memory systems while exposing the diagnostic axis. LLMSelfAssess (L2) corresponds to RMM~\citep{tan2025rmm} reflection over long-term memory and to in-context reasoning baselines for memory agents~\citep{hu2026memoryagent}. Platt/HistBin/Bayes (L2) cover classical online recalibration. EM-Joint (L2) tests whether explicitly modeling the second-order coupling helps; ZeroShot-SK (L1) and GT-SelfStats (L4) are diagnostic anchors that isolate prior metacognition and verbalization respectively. Published systems (MemGPT~\citep{packer2023memgpt}, Mem0~\citep{mem02025}, A-MEM~\citep{xu2025amem}) operate at L2 with different memory representations; we did not directly integrate them because the diagnostic ladder already covers the design space. Their direct evaluation under our protocol is engineering-feasible and is left to future work.
+\paragraph{Design-point mapping.} The five-level ladder is designed to subsume the design points of published memory systems while exposing the diagnostic axis. LSA (L2) corresponds to RMM~\citep{tan2025rmm} reflection over long-term memory and to in-context reasoning baselines for memory agents~\citep{hu2026memoryagent}. Platt/HistBin/Bayes (L2) cover classical online recalibration. EM-Joint (L2) tests whether explicitly modeling the second-order coupling helps; ZS-SK (L1) and GT-SelfStats (L4) are diagnostic anchors that isolate prior metacognition and verbalization respectively. Published systems (MemGPT~\citep{packer2023memgpt}, Mem0~\citep{mem02025}, A-MEM~\citep{xu2025amem}) operate at L2 with different memory representations; we did not directly integrate them because the diagnostic ladder already covers the design space. Their direct evaluation under our protocol is engineering-feasible and is left to future work.
 
 \section{Statistical Power Analysis for the n=6 Frontier Sample}
 \label{app:power}
@@ -538,7 +634,7 @@ OraclePDC achieves near-perfect CBF ($\geq$0.96) after just 10--20 turns, while 
 
 \paragraph{A4: Held-out MMLU-Pro contamination control (cited in \S\ref{sec:results}).}
 \label{app:heldout}
-For each of the 6 frontier models, we sampled 15 questions from each of 10 MMLU-Pro categories (150 questions/model, 10 categories: math, physics, chemistry, law, engineering, economics, health, psychology, business, history), measured per-category accuracy with \emph{up to 5 retries on API failures} (persistent failures excluded rather than counted as wrong), and queried ZeroShot-SK on those category names. Per-category accuracy and ZS estimates:
+For each of the 6 frontier models, we sampled 15 questions from each of 10 MMLU-Pro categories (150 questions/model, 10 categories: math, physics, chemistry, law, engineering, economics, health, psychology, business, history), measured per-category accuracy with \emph{up to 5 retries on API failures} (persistent failures excluded rather than counted as wrong), and queried ZS-SK on those category names. Per-category accuracy and ZS estimates:
 
 \begin{table*}[h]
 \centering
@@ -575,7 +671,7 @@ unparsed/150 & \multicolumn{2}{c}{0} & \multicolumn{2}{c}{0} & \multicolumn{2}{c
 
 \paragraph{A4b: Truly held-out novel-task contamination control (BBH; cited in \S\ref{sec:results}).}
 \label{app:heldout_bbh}
-For each of the 6 frontier models, we sampled 15 questions from each of 10 BBH (BIG-Bench Hard)~\citep{suzgun2022challenging} tasks (150 questions/model, tasks: \emph{boolean\_expressions, causal\_judgement, date\_understanding, logical\_deduction\_five\_objects, navigate, object\_counting, ruin\_names, sports\_understanding, tracking\_shuffled\_objects\_three\_objects, word\_sorting}). Unlike MMLU-Pro categories (which still partially overlap with MMLU's broad subject space), the BBH task set has \emph{no} subject-name overlap with MMLU's 57 fine-grained subjects, providing a stricter test of whether L1 metacognition transfers beyond MMLU-style content. We measured per-task accuracy with up-to-5 retries on API failures (zero failures across all 6 frontier models, 0/900 total) and queried ZeroShot-SK on the same task names. Per-task accuracy and ZS estimates:
+For each of the 6 frontier models, we sampled 15 questions from each of 10 BBH (BIG-Bench Hard)~\citep{suzgun2022challenging} tasks (150 questions/model, tasks: \emph{boolean\_expressions, causal\_judgement, date\_understanding, logical\_deduction\_five\_objects, navigate, object\_counting, ruin\_names, sports\_understanding, tracking\_shuffled\_objects\_three\_objects, word\_sorting}). Unlike MMLU-Pro categories (which still partially overlap with MMLU's broad subject space), the BBH task set has \emph{no} subject-name overlap with MMLU's 57 fine-grained subjects, providing a stricter test of whether L1 metacognition transfers beyond MMLU-style content. We measured per-task accuracy with up-to-5 retries on API failures (zero failures across all 6 frontier models, 0/900 total) and queried ZS-SK on the same task names. Per-task accuracy and ZS estimates:
 
 \begin{table*}[h]
 \centering
@@ -654,7 +750,7 @@ Claude-Opus-4-7     & 0.570 & \textbf{0.676} & 0.600 & 0.482 \\
 \end{tabular}
 \end{center}
 
-Under the cleaned 50$\times$50 protocol, the strongest second-order estimator on frontier is Dawid-Skene-asymmetric (mean CBF 0.755, n=6, Wilcoxon one-sided $p=0.047$ vs L1); GLAD reaches mean CBF 0.712 (Wilcoxon two-sided $p=0.031$, 6/6 wins, binomial one-sided $p=0.016$), beating L1 ZS mean 0.640 by $+$0.072 for GLAD and $+$0.115 for DS. Per-frontier breakdown (GLAD vs L1 ZS): GPT-5.4 $+$0.048, GPT-5.4-mini $+$0.028, GPT-5.5 $+$0.050, Claude-Sonnet-4-6 $+$0.093, Claude-Opus-4-6 $+$0.097, Claude-Opus-4-7 $+$0.118. \textbf{GLAD now beats L1 on all 6/6 frontier models} (under 50$\times$50, GPT-5.5 GLAD is 0.909 vs ZS 0.859). DS-asym beats L1 on 5/6 (loses only on GPT-5.5 by $-$0.025, where GLAD's per-domain difficulty modeling helps). \emph{Methodological note}: our DS / GLAD implementations follow Dawid-Skene (1979) and Whitehill et al.\ (2009) respectively, with EM updates over per-domain $\hat p(d)$, asymmetric per-state confusion (DS) or per-domain difficulty $\delta_d$ + per-state ability $\alpha_s$ (GLAD); convergence within 50--80 EM iterations using initial $\hat p=0.5$, $r_{\text{in}}=0.75$, $r_{\text{out}}=0.55$. Code at \href{https://github.com/anonymous/capbound-bench}{repo}/scripts/run\_glad\_ds.py. The headline takeaway under the cleaned protocol: both second-order estimators (DS, GLAD) and the in-context L2 baseline (LSA, mean 0.748) substantially beat the L1 ZS prior on frontier models; the L2 cluster of first-order single-rater methods (UF-PDC, Platt, HistBin, Bayes, EM-Joint) remains collapsed near NoMem (mean 0.628--0.634). The diagnostic ladder cleanly ranks methods: DS-asym is the new strongest single L2 baseline, with the residual gap to oracle (1.000) the open problem.
+Under the cleaned 50$\times$50 protocol, the strongest second-order estimator on frontier is Dawid-Skene-asymmetric (mean CBF 0.755, n=6, Wilcoxon one-sided $p=0.047$ vs L1); GLAD reaches mean CBF 0.712 (Wilcoxon two-sided $p=0.031$, 6/6 wins, binomial one-sided $p=0.016$), beating L1 ZS mean 0.640 by $+$0.072 for GLAD and $+$0.115 for DS. Per-frontier breakdown (GLAD vs L1 ZS): GPT-5.4 $+$0.048, GPT-5.4-mini $+$0.028, GPT-5.5 $+$0.050, Claude-Sonnet-4-6 $+$0.093, Claude-Opus-4-6 $+$0.097, Claude-Opus-4-7 $+$0.118. GLAD now beats L1 on all 6/6 frontier models (under 50$\times$50, GPT-5.5 GLAD is 0.909 vs ZS 0.859). DS-asym beats L1 on 5/6 (loses only on GPT-5.5 by $-$0.025, where GLAD's per-domain difficulty modeling helps). \emph{Methodological note}: our DS / GLAD implementations follow Dawid-Skene (1979) and Whitehill et al.\ (2009) respectively, with EM updates over per-domain $\hat p(d)$, asymmetric per-state confusion (DS) or per-domain difficulty $\delta_d$ + per-state ability $\alpha_s$ (GLAD); convergence within 50--80 EM iterations using initial $\hat p=0.5$, $r_{\text{in}}=0.75$, $r_{\text{out}}=0.55$. Code at the anonymized repository/scripts/run\_glad\_ds.py. The headline takeaway under the cleaned protocol: both second-order estimators (DS, GLAD) and the in-context L2 baseline (LSA, mean 0.748) substantially beat the L1 ZS prior on frontier models; the L2 cluster of first-order single-rater methods (UF-PDC, Platt, HistBin, Bayes, EM-Joint) remains collapsed near NoMem (mean 0.628--0.634). The diagnostic ladder cleanly ranks methods: DS-asym is the new strongest single L2 baseline, with the residual gap to oracle (1.000) the open problem.
 
 \paragraph{A6: Decoder ablation for EM-Joint (cited in \S\ref{sec:bottleneck}).}
 \label{app:decoder_ablation}
@@ -734,7 +830,7 @@ Claude-Opus-4-6     & .572$\pm$.007 & .066$\pm$.008 & .034$\pm$.007 & .052$\pm$.
 \end{tabular}
 \end{center}
 
-The bootstrap SDs are consistently small (CBF $\pm$0.005--0.014, ECE $\pm$0.008--0.025), confirming our findings are stable under session-level resampling. The NoMemory bootstrap means are within 1--3 SDs of the corresponding values in Table~\ref{tab:main} ; the small offset reflects bootstrap shrinkage and is consistent across models. Bootstrap SDs for the other baselines (LLMSelfAssess, EM-Joint, etc.) are of comparable magnitude (typically $\leq 0.020$); we use 2$\times$ this as the threshold for ``significant'' per-model differences in the U-shape analysis (Appendix~\ref{app:friend_or_foe}).
+The bootstrap SDs are consistently small (CBF $\pm$0.005--0.014, ECE $\pm$0.008--0.025), confirming our findings are stable under session-level resampling. The NoMemory bootstrap means are within 1--3 SDs of the corresponding values in Table~\ref{tab:main} ; the small offset reflects bootstrap shrinkage and is consistent across models. Bootstrap SDs for the other baselines (LSA, EM-Joint, etc.) are of comparable magnitude (typically $\leq 0.020$); we use 2$\times$ this as the threshold for ``significant'' per-model differences in the U-shape analysis (Appendix~\ref{app:friend_or_foe}).
 
 \paragraph{Hierarchical bootstrap for cross-model means.} The session-level resampling above quantifies within-model uncertainty but does not capture variation across the 15-model sample. We additionally implement a hierarchical bootstrap that resamples models (with replacement) and, within each sampled model, resamples sessions (with replacement); CBF is recomputed on each resample. We run 1{,}000 hierarchical iterations to derive 95\% CIs for cross-model mean CBF. Two findings are worth highlighting:
 
@@ -747,9 +843,9 @@ The bootstrap SDs are consistently small (CBF $\pm$0.005--0.014, ECE $\pm$0.008-
 \toprule
 \textbf{Comparison} & \textbf{Mean diff (raw CBF, n=15)} \\
 \midrule
-ZeroShot-SK $-$ NoMemory      & $+0.014$ \\
-ZeroShot-SK $-$ LLMSelfAssess & $-0.017$ \\
-LLMSelfAssess $-$ NoMemory    & $+0.032$ \\
+ZS-SK $-$ NoMemory      & $+0.014$ \\
+ZS-SK $-$ LSA & $-0.017$ \\
+LSA $-$ NoMemory    & $+0.032$ \\
 EM-Joint $-$ NoMemory         & $+0.015$ \\
 Platt-Online $-$ NoMemory     & $+0.006$ \\
 \bottomrule
@@ -766,8 +862,8 @@ Platt-Online $-$ NoMemory     & $+0.006$ \\
 \textbf{Baseline} & \textbf{Frontier $-$ Non-frontier} \\
 \midrule
 NoMemory       & $-0.101$ \\
-ZeroShot-SK    & $-0.076$ \\
-LLMSelfAssess  & $+0.076$ \\
+ZS-SK    & $-0.076$ \\
+LSA  & $+0.076$ \\
 UF-PDC         & $-0.065$ \\
 Platt-Online   & $-0.079$ \\
 HistBin-Online & $-0.079$ \\
@@ -1039,22 +1135,22 @@ The $T$=100 protocol preserves approximately 90\% of the ranking information on 
 This section provides the detailed citation-by-citation discussion that was compressed in the main text's Related Work section. We retain it here for reviewers and readers seeking the full lineage.
 
 \paragraph{LLM Self-Knowledge and Metacognition (extended).}
-\citet{kadavath2022language} established that LLMs possess latent representations of their own correctness via P(True) probing. \citet{jian2025metacognition} (NeurIPS 2025) showed that LLMs can monitor internal activations through in-context learning within a low-dimensional ``metacognitive space.'' \citet{binder2025introspection} (ICLR 2025) demonstrated behavior prediction via fine-tuning. \citet{ackerman2026metacognition} (ICLR 2026) evaluated LLM metacognition without self-reports, finding frontier models show limited, context-dependent metacognitive signals. \citet{liu2025metacognitive_learning} (ICML 2025) argued that truly self-improving agents require \emph{intrinsic} metacognitive learning. Most directly relevant, \citet{barkan2026capable} (ICLR 2026) found all 15 tested LLMs systematically overconfident on BigCodeBench and SWE-Bench, with overconfidence worsening through multi-step tasks.
+\citet{kadavath2022language} established that LLMs possess latent representations of their own correctness via P(True) probing. \citet{jian2025metacognition} showed that LLMs can monitor internal activations through in-context learning within a low-dimensional ``metacognitive space.'' \citet{binder2025introspection} demonstrated behavior prediction via fine-tuning. \citet{ackerman2026metacognition} evaluated LLM metacognition without self-reports, finding frontier models show limited, context-dependent metacognitive signals. \citet{liu2025metacognitive_learning} argued that truly self-improving agents require \emph{intrinsic} metacognitive learning. Most directly relevant, \citet{barkan2026capable} found all 15 tested LLMs systematically overconfident on BigCodeBench and SWE-Bench, with overconfidence worsening through multi-step tasks.
 
 \paragraph{Knowledge Boundaries and Calibration Benchmarks (extended).}
-\citet{li2025knowledge_boundary} (ACL 2025) proposed a formal four-type taxonomy of LLM knowledge boundaries. \citet{yin2024benchmarking_boundary} (ACL 2024) introduced the PGDC method via projected gradient descent with semantic constraints. SimpleQA~\citep{wei2024simpleqa} measures static factuality calibration on 4,326 short-answer questions. MMLU~\citep{hendrycks2021measuring} and TruthfulQA~\citep{lin2022truthfulqa} evaluate knowledge-level calibration in single-turn settings. HELM~\citep{liang2022helm} provides multi-dimensional evaluation including ECE. \citet{geng2024survey} (NAACL 2024) survey confidence estimation methods comprehensively.
+\citet{li2025knowledge_boundary} proposed a formal four-type taxonomy of LLM knowledge boundaries. \citet{yin2024benchmarking_boundary} introduced the PGDC method via projected gradient descent with semantic constraints. SimpleQA~\citep{wei2024simpleqa} measures static factuality calibration on 4,326 short-answer questions. MMLU~\citep{hendrycks2021measuring} and TruthfulQA~\citep{lin2022truthfulqa} evaluate knowledge-level calibration in single-turn settings. HELM~\citep{liang2022helm} provides multi-dimensional evaluation including ECE. \citet{geng2024survey} survey confidence estimation methods comprehensively.
 
 \paragraph{LLM Agent Memory Systems (extended).}
-MemGPT~\citep{packer2023memgpt} pioneered virtual memory hierarchies for agents. Mem0~\citep{mem02025}, MemOS~\citep{li2025memos}, RMM~\citep{tan2025rmm}, and A-MEM~\citep{xu2025amem} developed increasingly sophisticated memory architectures. MEM1~\citep{mem1_2026} (ICLR 2026) proposed constant-memory consolidation for multi-turn agents. \citet{sarukkai2025selfgen} (NeurIPS 2025) showed that agents storing successful trajectories as in-context examples improve ALFWorld success from 73\% to 89\%. MemoryAgentBench~\citep{hu2026memoryagent} (ICLR 2026) provides the first systematic benchmark for memory agents over four core competencies. None of these systems maintain endogenous per-domain accuracy state---the central novelty isolated by CapBoundary-Bench.
+MemGPT~\citep{packer2023memgpt} pioneered virtual memory hierarchies for agents. Mem0~\citep{mem02025}, MemOS~\citep{li2025memos}, RMM~\citep{tan2025rmm}, and A-MEM~\citep{xu2025amem} developed increasingly sophisticated memory architectures. MEM1~\citep{mem1_2026} proposed constant-memory consolidation for multi-turn agents. \citet{sarukkai2025selfgen} showed that agents storing successful trajectories as in-context examples improve ALFWorld success from 73\% to 89\%. MemoryAgentBench~\citep{hu2026memoryagent} provides the first systematic benchmark for memory agents over four core competencies. None of these systems maintain endogenous per-domain accuracy state---the central novelty isolated by CapBoundary-Bench.
 
 \paragraph{Learning from Implicit Feedback (extended).}
-\citet{tucker2024coactive} (ICML 2024) formalized coactive learning from user edits but assumes structured, reliable feedback. \citet{liu2025implicit} (EMNLP 2025) analyzed WildChat and LMSYS dialogue logs, finding that over half of follow-up utterances contain feedback signals, but that retrospective distillation from such feedback yields mixed results---helping on short MTBench questions but not on longer WildBench ones. \citet{leng2025taming} (ICLR 2025) showed that RLHF training itself induces systematic overconfidence.
+\citet{tucker2024coactive} formalized coactive learning from user edits but assumes structured, reliable feedback. \citet{liu2025implicit} analyzed WildChat and LMSYS dialogue logs, finding that over half of follow-up utterances contain feedback signals, but that retrospective distillation from such feedback yields mixed results---helping on short MTBench questions but not on longer WildBench ones. \citet{leng2025taming} showed that RLHF training itself induces systematic overconfidence.
 
 \paragraph{Selective Prediction and Abstention (extended).}
-\citet{kapoor2024taught} (NeurIPS 2024) showed 1,000-sample LoRA fine-tuning produces generalizable uncertainty estimators. \citet{diao2024rtuning} (NAACL 2024 Outstanding Paper) demonstrated R-Tuning teaches abstention as a meta-skill. \citet{xu2024sayself} (EMNLP 2024) trained models to generate self-reflective rationales. \citet{traub2024augrc} (NeurIPS 2024 Spotlight) proposed AUGRC for selective classification. \citet{li2025abstention} (TACL 2025) provides a comprehensive survey. \citet{kirichenko2025abstentionbench} (NeurIPS 2025) introduced AbstentionBench, finding that reasoning fine-tuning degrades abstention by 24\% on average. \citet{ahdritz2024knowable} (ICML 2024) separated epistemic from aleatoric uncertainty using linear probes on frozen embeddings.
+\citet{kapoor2024taught} showed 1,000-sample LoRA fine-tuning produces generalizable uncertainty estimators. \citet{diao2024rtuning} (NAACL 2024 Outstanding Paper) demonstrated R-Tuning teaches abstention as a meta-skill. \citet{xu2024sayself} trained models to generate self-reflective rationales. \citet{traub2024augrc} (NeurIPS 2024 Spotlight) proposed AUGRC for selective classification. \citet{li2025abstention} (TACL 2025) provides a comprehensive survey. \citet{kirichenko2025abstentionbench} introduced AbstentionBench, finding that reasoning fine-tuning degrades abstention by 24\% on average. \citet{ahdritz2024knowable} separated epistemic from aleatoric uncertainty using linear probes on frozen embeddings.
 
 \paragraph{Simulated Users and Closest Competitors (extended).}
-\citet{zhou2026sim2real} quantified the Sim2Real gap, finding LLM simulators create an ``easy mode'' with positivity bias. \citet{omnibehavior2025} introduced OmniBehavior from real user interaction logs, revealing models simulate users as an ``active average person.'' CCG~\citep{fang2025ccg} proves LLMs can adjust confidence through structured interaction but uses perfect binary feedback. LePe~\citep{han2024lepe} converts self-consistency data into SFT labels but requires offline weight updates. SaySelf~\citep{xu2024sayself} optimizes per-query abstention without persistent memory. \citet{dong2025rlplus} formalized ``capability boundary collapse'' in RL-trained LLMs. \citet{shen2024thermometer} (ICML 2024), \citet{chen2024reconfidencing} (EMNLP 2024 Findings), and \citet{manggala2025qacal} (ICLR 2025) studied task-specific calibration variance.
+\citet{zhou2026sim2real} quantified the Sim2Real gap, finding LLM simulators create an ``easy mode'' with positivity bias. \citet{omnibehavior2025} introduced OmniBehavior from real user interaction logs, revealing models simulate users as an ``active average person.'' CCG~\citep{fang2025ccg} proves LLMs can adjust confidence through structured interaction but uses perfect binary feedback. LePe~\citep{han2024lepe} converts self-consistency data into SFT labels but requires offline weight updates. SaySelf~\citep{xu2024sayself} optimizes per-query abstention without persistent memory. \citet{dong2025rlplus} formalized ``capability boundary collapse'' in RL-trained LLMs. \citet{shen2024thermometer}, \citet{chen2024reconfidencing} (EMNLP 2024 Findings), and \citet{manggala2025qacal} studied task-specific calibration variance.
 
 \section{API Model Versions}
 \label{app:api_versions}
@@ -1148,11 +1244,11 @@ The user simulator prompt includes the persona specification, the ground-truth a
 
 \paragraph{B3: User-Feedback PDC.} Same as B2, but the correctness signal is extracted from user feedback by an LLM-based classifier (Qwen-Max prompted with the (Q, A, feedback) triple to output a binary correctness judgment). LLM-based decoding gives near-uniform coverage across in- and out-of-expertise feedback, removing rule-classifier coverage as a confound.
 
-\paragraph{B6: LLMSelfAssess.} The agent receives a formatted summary of its 50 in-session interactions (question subject, confidence, decoded correctness) and is prompted at the \emph{end of the session} to output an estimate of its accuracy on each domain.
+\paragraph{B6: LSA.} The agent receives a formatted summary of its 50 in-session interactions (question subject, confidence, decoded correctness) and is prompted at the \emph{end of the session} to output an estimate of its accuracy on each domain.
 
 \paragraph{B10: EM-Joint.} Joint estimation of $(\hat p(d), \hat r_{\text{in}}, \hat r_{\text{out}})$ via Expectation--Maximization on the (decoded feedback, raw confidence) stream. E-step: $P(\text{correct}_t | f_t, c_t, p, r) \propto P(f_t | \text{correct}_t, r) P(\text{correct}_t | c_t, p)$. M-step: $\hat p(d) \leftarrow$ posterior mean of correctness in domain $d$; $\hat r_{\text{in/out}} \leftarrow$ posterior agreement between feedback and inferred correctness within each expertise group.
 
-\paragraph{B11: ZeroShot-SK.} A single prompt at the start of evaluation: ``For each of the 20 MMLU subjects, estimate your own accuracy on a 0--100 scale, with no access to any prior interaction.'' The estimates are parsed into $\hat p(d)$ and CBF is computed once.
+\paragraph{B11: ZS-SK.} A single prompt at the start of evaluation: ``For each of the 20 MMLU subjects, estimate your own accuracy on a 0--100 scale, with no access to any prior interaction.'' The estimates are parsed into $\hat p(d)$ and CBF is computed once.
 
 \paragraph{B12: GT-SelfStats.} The true per-domain accuracy $p^*(d)$ for the agent (from the open-loop pre-test) is provided in the prompt and the agent is asked to repeat each value. Diagnostic anchor for verbalization.
 
@@ -1170,16 +1266,16 @@ The user simulator prompt includes the persona specification, the ground-truth a
 \textbf{Model} & \textbf{Baseline} & \textbf{Strong} & \textbf{Medium} & \textbf{Weak} \\
 \midrule
 \multirow{2}{*}{Llama-3-8B}
- & ZeroShot-SK   & 0.79 & 0.68 & 0.51 \\
- & LLMSelfAssess & 0.76 & 0.63 & 0.50 \\
+ & ZS-SK   & 0.79 & 0.68 & 0.51 \\
+ & LSA & 0.76 & 0.63 & 0.50 \\
 \midrule
 \multirow{2}{*}{Qwen-Turbo}
  & NoMemory      & 0.81 & 0.70 & 0.55 \\
- & ZeroShot-SK   & 0.83 & 0.72 & 0.57 \\
+ & ZS-SK   & 0.83 & 0.72 & 0.57 \\
 \midrule
 \multirow{2}{*}{Qwen-Max}
  & NoMemory      & 0.80 & 0.71 & 0.55 \\
- & LLMSelfAssess & 0.85 & 0.75 & 0.58 \\
+ & LSA & 0.85 & 0.75 & 0.58 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1203,7 +1299,7 @@ We follow the NeurIPS 2026 Datasets \& Benchmarks reproducibility template. Cros
 
 \paragraph{Data and code.}
 \begin{itemize}[nosep,leftmargin=1.4em]
-  \item \emph{Code released.} \checkmark{} \href{https://github.com/anonymous/capbound-bench}{repo}: scheduler, baseline implementations (10), DS / GLAD scripts, R4 diagnostic / analysis tool, ablation scripts.
+  \item \emph{Code released.} \checkmark{} the anonymized repository: scheduler, baseline implementations (10), DS / GLAD scripts, R4 diagnostic / analysis tool, ablation scripts.
   \item \emph{Data released.} \checkmark{} All 30k+ session traces (raw $(q_t, a_t, c_t, f_t, \text{user}_t, \text{decoded}_t)$ tuples) at the same repo, organized per model$\times$baseline.
   \item \emph{Pinned model versions.} \checkmark{} \S\ref{app:api_versions}: open-weights models pinned to HuggingFace snapshot commits; API models reported with exact endpoints, identifiers, and access dates.
   \item \emph{Random seeds.} Sessions are deterministic given (model, persona, question pool); we fix question shuffling per (model, session) with a 42-derived seed; user-persona temperature is fixed at 0.7 (documented in Appendix~\ref{app:persona}).
