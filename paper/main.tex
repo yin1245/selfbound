@@ -69,11 +69,9 @@ These imply very different research directions---H1 motivates fine-tuning on num
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig1_overview.pdf}
-\caption{\textbf{SelfBound at a glance: H3 is the core challenge.} \textbf{(A)}~Session protocol: 50 turns per session, drawing questions from 20 MMLU domains (green=correct, red=wrong). \textbf{(B)}~Single turn: the agent answers with confidence; a cross-family simulated user gives domain-dependent noisy feedback ($r_{\text{in}}\!\approx\!75\%$ in-expertise, $r_{\text{out}}\!\approx\!46\%$ out); the decoder extracts a labeled signal that updates the per-domain self-model; CBF measures the per-domain fidelity of $\hat p$ to the true $p^*(d)$. \textbf{(C)}~The H3 core challenge: the agent must \emph{jointly} estimate its own per-domain accuracy $p^*(d)$ \emph{and} user reliability $r(d)$ from the noisy feedback stream---a coupled chicken-and-egg problem (estimating $p^*$ needs reliable feedback; estimating $r$ needs $p^*$). EM-Joint and other \emph{second-order} estimators close most of this 0.25 CBF gap (see \S\ref{sec:bottleneck}).}
+\caption{\textbf{The L0--L4 baseline ladder localizes where agent self-knowledge fails.} L4$\approx$L3$\approx$1.0 rules out the output channel (H1); the L2$\to$L3 gap of $\sim$0.30 isolates noise-robust online inference (H3) as the bottleneck. \textbf{(A)}~Session protocol: 50 sessions $\times$ 50 turns over 20 MMLU domains (green=correct, red=wrong). \textbf{(B)}~Single turn: the agent answers with confidence; a cross-family simulated user gives domain-dependent noisy feedback ($r_{\text{in}}\!\approx\!75\%$ in-expertise, $r_{\text{out}}\!\approx\!46\%$ out); a decoder extracts the labeled signal that updates the per-domain self-model. \textbf{(C)}~The five-level diagnostic ladder: L0 raw confidence (NoMemory) $\to$ L1 zero-shot prior (ZS-SK) $\to$ L2 noisy-feedback learners (LSA, EM-Joint, DS-asym, GLAD) $\to$ L3 binary-label oracle (OraclePDC) $\to$ L4 full-statistic oracle (GT-SelfStats). Adjacent comparisons isolate each candidate failure: L4--L3 isolates H1, L3--L1 isolates H2, L3--L2 isolates H3.}
 \label{fig:overview}
 \end{figure*}
-
-\paragraph{Roadmap.} \S\ref{sec:benchmark} specifies the protocol, simulator, question pool, and CBF metric, released as a complete artifact (20-domain MMLU pool, 47K-turn JSONL traces, per-domain target statistics, all L0--L4 baselines, leaderboard protocol) in an anonymous repository. \S\ref{sec:results} reports the full L0--L4 evaluation across 15 models. \S\ref{sec:bottleneck} dissects the H3 locus: per-model L2 failure modes, the structural reason first-order methods cluster, and a parameter-free benchmark-validation rule (R4) any new estimator should clear. \S\ref{sec:ablation} shows the same diagnostic structure recurs across task families (GSM8K, HumanEval, BFCL): for 12 of 15 models, the direction of relative reliability flips across tasks, so per-task boundary modeling is structurally necessary in this benchmark. \S\ref{sec:limitations}--\S\ref{sec:conclusion} discuss validity and isolate noise-robust second-order online inference as the concrete open problem.
 
 
 %==============================================================================
@@ -257,11 +255,17 @@ Across MMLU, GSM8K, HumanEval, and BFCL the same model exhibits qualitatively di
 \section{Limitations and Future Work}
 \label{sec:limitations}
 
-\paragraph{Scope.} SelfBound evaluates per-domain self-knowledge under a 50-turn MMLU protocol with a controlled synthetic feedback channel (75\% in-expertise, 46\% out, cross-family routing to mitigate dual-role bias). Three extension tasks (GSM8K, HumanEval, BFCL) use a single-shot two-step protocol because they lack natural multi-domain structure for CBF; the cross-task heterogeneity finding therefore involves a task--protocol confound, addressed with a protocol-controlled subset analysis on the three same-protocol extensions (12/15 sign-flip rate; Appendix~\ref{app:proto_controlled}). The frontier sub-sample contains six model endpoints (three per family); paired-comparison statistics across these six (sign consistency, bootstrap CIs of paired deltas; Appendix~\ref{app:power}) characterize direction of effect rather than population-level magnitude.
+\paragraph{Scope of evaluation.} SelfBound evaluates per-domain self-knowledge under a 50-turn MMLU protocol with a controlled synthetic feedback channel (75\% in-expertise, 46\% out, cross-family routing to mitigate dual-role bias). The three extension tasks (GSM8K, HumanEval, BFCL) use a single-shot two-step protocol because they lack the multi-domain structure CBF requires; the cross-task heterogeneity finding in \S\ref{sec:ablation} is therefore independently validated via a protocol-controlled subset analysis (12/15 sign-flip rate on the three same-protocol tasks; Appendix~\ref{app:proto_controlled}).
 
-\paragraph{Validity of the L1 channel.} Contamination controls (MMLU-Pro, BBH no-overlap; Appendix~\ref{app:heldout}) attenuate but do not fully rule out benchmark-name memorization in L1; we therefore describe L1 as per-domain capability estimation rather than self-knowledge.
+\paragraph{Validity bounds.} L1 ZS-SK measures per-domain \emph{capability estimation} rather than self-knowledge in the strict sense; MMLU-Pro and BBH contamination controls (Appendix~\ref{app:heldout}) attenuate but do not eliminate benchmark-name memorization. The frontier sub-sample of $n{=}6$ supports direction-of-effect reporting (sign consistency, bootstrap CIs of paired deltas; Appendix~\ref{app:power}) rather than population-level magnitude. The headline conclusions (H1 does not bind, H2 family-splits, H3 is second-order tractable) do not depend on the literal reading of either.
 
-\paragraph{Future work.} A human-feedback validation pilot, replicating the full L0--L4 ladder on extension tasks, expanding the frontier slice (next informative comparison: DS-asym vs.\ GLAD at $n\!\approx\!18$), and extending to open-ended multi-step agents (SWE-Bench-style) are concrete next steps.
+\paragraph{Next steps.}
+\begin{itemize}[nosep,leftmargin=1.2em]
+  \item \emph{Human-feedback pilot}: replace the synthetic channel with real users and check whether the H3 ranking transfers.
+  \item \emph{Full ladder on extension tasks}: replicate L0--L4 on GSM8K/HumanEval/BFCL.
+  \item \emph{Frontier-slice extension}: scale to $n\!\approx\!18$ to refine the DS-asym vs.\ GLAD comparison (per Appendix~\ref{app:power} power calculation).
+  \item \emph{Open-ended multi-step agents}: extend to SWE-Bench-style settings.
+\end{itemize}
 
 
 \section{Conclusion}
