@@ -1,8 +1,5 @@
 \documentclass[11pt]{article}
 \PassOptionsToPackage{numbers,sort&compress}{natbib}
-\newcommand{\answerYes}[1][]{\textbf{[Yes]}#1}
-\newcommand{\answerNo}[1][]{\textbf{[No]}#1}
-\newcommand{\answerNA}[1][]{\textbf{[NA]}#1}
 \usepackage[eandd]{neurips_2026}
 
 \usepackage[utf8]{inputenc}
@@ -11,6 +8,7 @@
 \usepackage{url}
 \usepackage{booktabs}
 \usepackage{amsfonts}
+\usepackage{amssymb}
 \usepackage{amsmath}
 \usepackage{nicefrac}
 \usepackage{microtype}
@@ -226,24 +224,26 @@ The five \emph{first-order} L2 feedback-learning methods (UF-PDC, Platt-Online, 
 \paragraph{Capability spectrum and best-baseline assignment.}
 With the cleaned protocol (Table~\ref{tab:main}), the ``best'' non-oracle baseline per row (column ``Best'' in Table~\ref{tab:main}, defined as the argmax across the 8 baseline columns L0 NoMem + L1 ZS + 6$\times$L2) splits three ways across 15 models: LSA wins on 6 (DeepSeek-V3.2, Qwen-Max, GPT-5.5, Claude-Sonnet-4-6, Claude-Opus-4-6, Claude-Opus-4-7), EM-Joint wins on 5 (Mistral-7B, Llama-3-8B, GLM-5, Qwen2.5-7B, Qwen3.5-27B---note that on Mistral-7B the EM--NoMem--ZS--LSA spread is within $\pm 0.003$, so the EM win is essentially a tie with the trivial $\hat{p}\approx 0.5$ anchor), and ZS-SK wins on 4 (Qwen-Turbo, Qwen-Plus, GPT-5.4-mini, GPT-5.4). NoMemory does not strictly win on any model under this argmax. \emph{Note:} the ``feedback as friend or foe'' analysis in Appendix~\ref{app:friend_or_foe} uses the orthogonal head-to-head ZS-vs-LSA criterion (only those two baselines, ignoring NoMem/EM); a model can therefore appear under ``LSA-dominant best-of-8'' here yet ``ZS-wins-over-LSA'' in the head-to-head, since the criteria differ.
 
-\paragraph{Adaptive selection diagnostic R4.} The capability split above admits a simple parameter-free selection rule, R4: \emph{pick L1 (ZS) when $\text{ZS}(m){>}\text{NoMem}(m)$, otherwise pick L2 (LSA)}. R4 attains mean CBF 0.722 across $n{=}15$, closing $\approx 72\%$ of the always-ZS-to-per-model-oracle gap on the L1/L2 mixture family. Its per-model sign tests against always-ZS ($p{=}0.22$) and always-LSA ($p{=}0.69$) are non-significant, indicating that R4 redistributes wins across models rather than dominating either single baseline. We use R4 as a diagnostic anchor for the L1/L2 family, analogous to probing classifiers~\citep{tenney2019bertology} or influence functions~\citep{koh2017influence}; the empirical frontier ceiling remains DS-asym at CBF 0.755. Full LOOCV, per-model breakdown, and sign-test arithmetic are in Appendix~\ref{app:r4}.
-
-\section{Diagnosis: Localizing the Bottleneck via the Five-Level Ladder}
+\subsection{Diagnosis via the Ladder Visualization}
 \label{sec:analysis}
 \label{sec:bottleneck}
 
-Figure~\ref{fig:ladder} reveals that the bottleneck is not the output channel (L3$\approx$L4$\approx$1.0) but noise-robust online inference: the L2$\to$L3 gap is $\approx$0.30 across all 15 models. The five-level ladder is designed so adjacent comparisons isolate sub-capabilities; we walk through each comparison below.
+Figure~\ref{fig:ladder} compresses the per-row Table~\ref{tab:main} story into vertical structure that reads each adjacent gap as a sub-capability test: the bottleneck is not the output channel (L4$\approx$L3$\approx$1.0) but noise-robust online inference (L2$\to$L3 gap $\approx$0.30 across all 15 models).
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{figures/fig13_ladder.pdf}
-\caption{\textbf{Five-level diagnostic ladder.} Mean CBF per baseline level on (a) all 15 models and (b) the 6 frontier models. \textbf{(a)} The L2$\to$L3 gap is $\approx$0.30 (best L2 LSA 0.702 vs.\ OraclePDC 1.000): first-order L2 methods do not recover the signal from noisy feedback. \textbf{(b)} On the frontier subset, the first-order L2 cluster (Platt/HistBin/Bayes/EM/UF) collapses to NoMem (0.628--0.634), while the second-order estimators (DS-asym 0.755, GLAD 0.712) and in-context LSA (0.748) exceed the L1 ZS prior (0.640) but still fall well short of OraclePDC. Dotted vertical line marks the L0 NoMemory anchor.}
+\caption{\textbf{The L0--L4 ladder localizes the bottleneck.} Mean CBF per baseline level on (a) all 15 models and (b) the 6 frontier models. \textbf{(a)} L2$\to$L3 gap $\approx$0.30 (best L2 LSA 0.702 vs.\ OraclePDC 1.000): first-order L2 methods do not recover the signal from noisy feedback. \textbf{(b)} On the frontier, the first-order L2 cluster (Platt/HistBin/Bayes/EM/UF) collapses to NoMem (0.628--0.634); only second-order estimators (DS-asym 0.755, GLAD 0.712) and in-context LSA (0.748) exceed the L1 ZS prior (0.640), but all fall well short of OraclePDC. Dotted vertical line marks the L0 NoMemory anchor.}
 \label{fig:ladder}
 \end{figure*}
 
-The vertical structure isolates each sub-capability. \textbf{L4 vs L3 ($<$1\% gap):} the output channel is not the constraint (H1 ruled out). \textbf{L3 vs L2 ($\sim$0.30 gap):} the empirical bottleneck---given clean labels agents reach 1.0, but no method recovers the signal from noisy LLM-decoded feedback (H3 confirmed). L2 vs L1 (n=15: 0.674--0.686 vs 0.685; n=6 frontier: 0.628--0.634 vs 0.640): L1 ZS ties or exceeds the algorithmic L2 cluster, while only second-order L2 estimators (DS-asym 0.755, GLAD 0.712) and in-context LSA (0.748) exceed L1 on the frontier (Appendix~\ref{app:friend_or_foe}, \ref{app:ds_glad}).
+Reading the ladder by adjacent comparisons: \emph{L4 vs L3 ($<$1\% gap)}---the output channel is not the constraint, ruling out H1. \emph{L3 vs L2 ($\sim$0.30 gap)}---the empirical bottleneck: with clean per-turn labels agents reach 1.0, but no method fully recovers the signal from noisy LLM-decoded feedback, confirming H3. \emph{L2 vs L1} (n=15: 0.674--0.686 vs 0.685; n=6 frontier: 0.628--0.634 vs 0.640)---L1 ZS ties or exceeds the algorithmic L2 cluster on average; only second-order estimators (DS-asym, GLAD) and in-context LSA exceed L1 on the frontier (Appendix~\ref{app:friend_or_foe}, \ref{app:ds_glad}).
 
-\paragraph{Cross-task heterogeneity.} Across MMLU, GSM8K, HumanEval, and BFCL the same model exhibits qualitatively different calibration regimes: 12/15 models exhibit Gap-sign reversals across the protocol-controlled extension suite (GSM8K/HumanEval/BFCL on the same single-shot two-step protocol), and a Platt scaling learned on MMLU \emph{harms} GSM8K for the majority of models. Per-task boundary modeling is therefore a structural necessity, not a convenience. Full per-task table, controlled-protocol subset analysis, and Platt-transfer details: Appendix~\ref{app:proto_controlled} and Table~\ref{tab:fourtask_overview}.
+\paragraph{A diagnostic per-model selection rule (R4).} The H2 family-split above motivates a simple sanity-check rule rather than a new estimator: \textbf{R4} (per-model best-of-two between the prior and in-context aggregation) selects L1 (ZS-SK) if $\text{ZS}(m){>}\text{NoMem}(m)$, otherwise L2 (LSA). The ``R4'' label is internal to our four-rule analysis pipeline (R1--R4 documented in Appendix~\ref{app:r4}); we report only R4 here because the R1--R3 rules are subsumed. R4 attains mean CBF 0.722 across $n{=}15$ and closes $\approx 72\%$ of the always-ZS-to-per-model-oracle gap, but its per-model sign tests against always-ZS ($p{=}0.22$) and always-LSA ($p{=}0.69$) are non-significant: the rule \emph{redistributes} wins, it does not dominate. We present R4 as a benchmark-validation lower bound---any new method should clear it---not as a contribution; the empirical frontier ceiling remains DS-asym at CBF 0.755. Full LOOCV, per-model breakdown, and sign-test arithmetic in Appendix~\ref{app:r4}.
+
+\subsection{Cross-Task Heterogeneity: Per-Task Boundaries Are Structurally Necessary}
+
+Across MMLU, GSM8K, HumanEval, and BFCL the same model exhibits qualitatively different calibration regimes. Within the protocol-controlled extension suite (GSM8K/HumanEval/BFCL under the same single-shot two-step protocol), 12/15 models show Gap-sign reversals across tasks, and a Platt scaling learned on MMLU \emph{harms} GSM8K for the majority of models. Per-task boundary modeling is therefore a structural necessity, not a convenience. Full per-task table, controlled-protocol subset analysis, and Platt-transfer details: Appendix~\ref{app:proto_controlled} and Table~\ref{tab:fourtask_overview}.
 
 \section{Limitations and Future Work}
 \label{sec:limitations}
