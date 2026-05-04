@@ -257,8 +257,6 @@ Across MMLU, GSM8K, HumanEval, and BFCL the same model exhibits qualitatively di
 
 \paragraph{Scope of evaluation.} SelfBound evaluates per-domain self-knowledge under a 50-turn MMLU protocol with a controlled synthetic feedback channel (75\% in-expertise, 46\% out, cross-family routing to mitigate dual-role bias). The three extension tasks (GSM8K, HumanEval, BFCL) use a single-shot two-step protocol because they lack the multi-domain structure CBF requires; the cross-task heterogeneity finding in \S\ref{sec:ablation} is therefore independently validated via a protocol-controlled subset analysis (12/15 sign-flip rate on the three same-protocol tasks; Appendix~\ref{app:proto_controlled}).
 
-\paragraph{Validity bounds.} L1 ZS-SK measures per-domain \emph{capability estimation} rather than self-knowledge in the strict sense; MMLU-Pro and BBH contamination controls (Appendix~\ref{app:heldout}) attenuate but do not eliminate benchmark-name memorization. The frontier sub-sample of $n{=}6$ supports direction-of-effect reporting (sign consistency, bootstrap CIs of paired deltas; Appendix~\ref{app:power}) rather than population-level magnitude. The headline conclusions (H1 does not bind, H2 family-splits, H3 is second-order tractable) do not depend on the literal reading of either.
-
 \paragraph{Next steps.}
 \begin{itemize}[nosep,leftmargin=1.2em]
   \item \emph{Human-feedback pilot}: replace the synthetic channel with real users and check whether the H3 ranking transfers.

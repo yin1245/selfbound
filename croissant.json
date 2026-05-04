@@ -53,7 +53,7 @@
   "description": "SelfBound is a diagnostic benchmark for LLM-agent self-knowledge under noisy interactive feedback. It releases 47,000+ session-turn JSONL traces collected by running 15 frontier and open-weights LLMs through a 50-session x 50-turn protocol on 20 MMLU subjects, paired with cross-family LLM-simulated users (75% in-expertise / 46% out-of-expertise reliability). Each turn records the question, the agent's answer and confidence, ground-truth correctness, the simulated user's natural-language feedback, and an in-expertise flag. The dataset enables evaluation of per-domain capability estimation methods via the Capability Boundary Fidelity (CBF) metric, separating three competing hypotheses (H1 output channel, H2 prior metacognition, H3 noise-robust online inference) through a five-level information ladder.",
   "url": "https://anonymous.4open.science/r/selfbound",
   "license": "https://creativecommons.org/licenses/by/4.0/",
-  "version": "1.1.10",
+  "version": "1.1.11",
   "datePublished": "2026-05-07",
   "keywords": [
     "LLM evaluation",

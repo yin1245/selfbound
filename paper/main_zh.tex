@@ -253,8 +253,6 @@ GT-SelfStats 在所有 15 个模型上达到了 CBF $\geq 0.992$（最差差距 
 
 \paragraph{评测范围。} SelfBound 在 50 轮 MMLU 协议下评估每领域自我知识，反馈通道为受控合成（专业域内 75\%、域外 46\%，跨家族路由以缓解双重角色偏差）。三个扩展任务（GSM8K、HumanEval、BFCL）使用单次两步协议，因为它们不具备 CBF 所需的多领域结构；\S\ref{sec:ablation} 的跨任务异质性结论通过协议受控子集分析（同协议三任务的 12/15 符号反转率；附录~\ref{app:proto_controlled}）独立验证。
 
-\paragraph{有效性边界。} L1 ZS-SK 测量的是\emph{每领域能力估计}而非严格意义上的自我认知；MMLU-Pro 与 BBH 污染控制（附录~\ref{app:heldout}）将基准名称记忆混淆压低但未消除。前沿子样本 $n{=}6$ 用于报告效应方向（符号一致性、成对 delta 的 bootstrap CI；附录~\ref{app:power}），而非总体级幅度。本文头条结论（H1 不构成约束、H2 家族分裂、H3 二阶可处理）不依赖这两项的字面解读。
-
 \paragraph{下一步。}
 \begin{itemize}[nosep,leftmargin=1.2em]
   \item \emph{人类反馈试点}：将合成通道替换为真实用户，验证 H3 排名是否迁移。
