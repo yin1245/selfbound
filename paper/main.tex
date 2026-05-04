@@ -127,7 +127,14 @@ SelfBound evaluates a single capability: given a stream of $(q_t, a_t, c_t, f_t)
   \qquad \text{CBF} \in [0, 1].
   \label{eq:cbf}
 \end{equation}
-CBF is computed once per session at the end of the 50-turn protocol. CBF is complementary to per-query calibration metrics (ECE/Brier): ECE operates on $(c_t, y_t)$ pairs while CBF operates on $(\hat{p}(d), p^*(d))$ pairs, so neither implies the other---we verify this empirically in Appendix~\ref{app:bench_details}. The trivial estimator $\hat{p}(d) = 0.5$ attains $\text{CBF} = 1 - \mathbb{E}_d[|0.5 - p^*(d)|]$, which is high for weak models clustered near 50\% and low for strong models with widely varying accuracy across domains; this asymmetry is exactly what makes the metric informative for our diagnostic.
+CBF is computed once per session at the end of the 50-turn protocol. CBF is complementary to per-query calibration metrics (ECE/Brier): ECE operates on $(c_t, y_t)$ pairs while CBF operates on $(\hat{p}(d), p^*(d))$ pairs, so neither implies the other; Figure~\ref{fig:cbf_ece} confirms this empirically (Pearson $r{=}+0.21$, $p{=}0.45$ across 15 models). The trivial estimator $\hat{p}(d) = 0.5$ attains $\text{CBF} = 1 - \mathbb{E}_d[|0.5 - p^*(d)|]$, which is high for weak models clustered near 50\% and low for strong models with widely varying accuracy across domains; this asymmetry is exactly what makes the metric informative for our diagnostic.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.72\columnwidth]{figures/fig6_cbf_ece.pdf}
+\caption{\textbf{CBF and ECE measure different aspects of self-knowledge.} Per-model NoMemory CBF vs.\ NoMemory ECE across all 15 models. Pearson $r{=}+0.21$ ($p{=}0.45$) confirms the two metrics are essentially uncorrelated: a model can be well-calibrated per query (low ECE) and have poor per-domain self-knowledge (low CBF), or vice versa. CBF is therefore not a reparameterization of ECE.}
+\label{fig:cbf_ece}
+\end{figure}
 
 \paragraph{Baseline-adjusted CBF: the primary cross-model metric.} To remove the trivial-estimator artifact when comparing methods \emph{across} models, we define a normalized variant that measures the fraction of the oracle gap a method closes relative to the constant baseline:
 \begin{equation}

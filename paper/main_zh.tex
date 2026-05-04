@@ -122,7 +122,14 @@ SelfBound 评估单一能力：给定一个包含 $T$ 轮的 $(q_t, a_t, c_t, f_
   \qquad \text{CBF} \in [0, 1].
   \label{eq:cbf}
 \end{equation}
-CBF 在每会话结束时计算一次（我们不跟踪学习曲线；会话内的动态作为辅助附录分析报告）。CBF 与每次查询的校准指标（ECE/Brier）互补：ECE 作用于 $(c_t, y_t)$ 对，而 CBF 作用于 $(\hat{p}(d), p^*(d))$ 对，因此两者互不蕴含——我们在附录~\ref{app:bench_details} 中进行了实证验证。平凡估计器 $\hat{p}(d) = 0.5$ 达到 $\text{CBF} = 1 - \mathbb{E}_d[|0.5 - p^*(d)|]$，对于集中在50\%附近的弱模型，这个值较高，而对于在不同领域准确率差异较大的强模型，这个值较低；这种不对称性正是使该指标对我们的诊断具有信息量的原因。
+CBF 在每会话结束时计算一次（我们不跟踪学习曲线；会话内的动态作为辅助附录分析报告）。CBF 与每次查询的校准指标（ECE/Brier）互补：ECE 作用于 $(c_t, y_t)$ 对，而 CBF 作用于 $(\hat{p}(d), p^*(d))$ 对，因此两者互不蕴含；图~\ref{fig:cbf_ece} 给出了实证证据（15 个模型上 Pearson $r{=}+0.21$，$p{=}0.45$）。平凡估计器 $\hat{p}(d) = 0.5$ 达到 $\text{CBF} = 1 - \mathbb{E}_d[|0.5 - p^*(d)|]$，对于集中在50\%附近的弱模型，这个值较高，而对于在不同领域准确率差异较大的强模型，这个值较低；这种不对称性正是使该指标对我们的诊断具有信息量的原因。
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.72\columnwidth]{figures/fig6_cbf_ece.pdf}
+\caption{\textbf{CBF 与 ECE 衡量自我知识的不同维度。} 15 个模型上 NoMemory CBF 与 NoMemory ECE 的散点。Pearson $r{=}+0.21$（$p{=}0.45$）表明两个指标基本不相关：模型可以"每次查询校准良好"（低 ECE）但"分领域自我认知差"（低 CBF），反之亦然。CBF 因此不是 ECE 的重新参数化。}
+\label{fig:cbf_ece}
+\end{figure}
 
 \paragraph{基线调整后的CBF：主要的跨模型度量。} 为了在跨模型比较方法时消除平凡估计器的影响，我们定义了一个归一化的变体，该变体衡量相对于常数基线，某种方法关闭预言机差距的比例：
 \begin{equation}
