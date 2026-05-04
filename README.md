@@ -10,9 +10,10 @@ learners → L3 binary-label oracle → L4 full-statistic oracle).
 
 ## Headline numbers
 
-- **15 models from 7 families**, **47K+ interactions** on a 50×50 protocol (50 sessions × 50 turns)
+- **15 models from 7 families**, **47K+ interactions** on a uniform 50×50 protocol (50 sessions × 50 turns; all models including frontier)
 - Cross-family LLM-simulated user with **75% in-expertise / 46% out-of-expertise** reliability
 - Headline metric: **Capability Boundary Fidelity (CBF)** — L1 distance between estimated and empirical per-domain accuracy
+- We name the failure mode **Self-Boundary Collapse**: agents repeatedly receive feedback yet fail to translate it into a stable, domain-level self-model
 - **H1 does not bind** (GT-SelfStats ≥ 0.99 on every model)
 - **H2 splits by family** — zero-shot prior wins on GPT (frontier mean 0.640) but falls below NoMemory on all 3 Claude models
 - **H3 partially refuted** — second-order Dawid–Skene-asym (0.755), GLAD (0.712, 6/6 frontier wins, p=0.031), and in-context LSA (0.748) substantially exceed L1 prior
@@ -38,10 +39,12 @@ capbound-bench/
 │   └── scripts/              # Evaluation drivers, contamination-control runners
 │
 └── paper/
-    ├── CapBoundary-Bench.pdf # Anonymized submission PDF
-    ├── main.tex              # LaTeX source
-    ├── references.bib        # Bibliography
-    └── figures/              # 10 figures
+    ├── CapBoundary-Bench.pdf       # Anonymized EN submission PDF (NeurIPS, 9 main pages)
+    ├── CapBoundary-Bench_zh.pdf    # Chinese translation (for accessibility, not submission)
+    ├── main.tex                    # EN LaTeX source
+    ├── main_zh.tex                 # ZH LaTeX source
+    ├── references.bib              # Bibliography
+    └── figures/                    # 10 figures
 ```
 
 ## Quickstart
@@ -62,10 +65,10 @@ print(turn["domain"], turn["question"][:80], "→ agent:", turn["agent_answer"],
 ```python
 import json, numpy as np
 
-with open("data/aggregates/all_baselines_capbound_sessions_gpt-5.5_20260430_061851_20260501_031654.json") as f:
+with open("data/aggregates/all_baselines_capbound_sessions_gpt-5.5_20260502_201014_20260502_234417.json") as f:
     agg = json.load(f)
-print("ZeroShot-SK CBF:", agg["aggregate"]["ZeroShot-SK"]["CBF"])
-print("LLMSelfAssess CBF:", agg["aggregate"]["LLMSelfAssess"]["CBF"])
+print("ZeroShot-SK CBF:", agg["aggregate"]["ZeroShot-SK"]["CBF"])  # 0.859
+print("LLMSelfAssess CBF:", agg["aggregate"]["LLMSelfAssess"]["CBF"])  # 0.902
 ```
 
 ### 3. Run the held-out contamination control
