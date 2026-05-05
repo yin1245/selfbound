@@ -84,7 +84,7 @@ python code/scripts/eval_heldout_n6.py
 
 ```bibtex
 @inproceedings{ladder2026,
-  title = {LADDER: A Diagnostic Benchmark for LLM Agent Self-Knowledge under Noisy Feedback},
+  title = {LADDER: LLM Agent Diagnostic of Domain-level Estimation Reliability},
   author = {Anonymous},
   booktitle = {NeurIPS 2026 Datasets and Benchmarks Track},
   year = {2026}

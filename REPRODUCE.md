@@ -11,12 +11,12 @@ The fastest path is to start from the released session JSONLs (no API calls need
 pip install numpy scipy scikit-learn sentence-transformers
 
 # For a single model — recomputes 10 baselines on the existing session file
-python code/scripts/run_all_baselines_v4.py \
+python code/baselines/run_all_baselines_v4.py \
     --session_file data/sessions/capbound_sessions_gpt-5.5_20260502_201014.json \
     --output_dir /tmp/
 
 # For all 15 models in batch
-python code/scripts/run_all_baselines_v4.py \
+python code/baselines/run_all_baselines_v4.py \
     --batch \
     --output_dir /tmp/
 ```
@@ -34,7 +34,7 @@ This requires API access to the model providers. Estimated cost: **~$200–400 U
 for model in qwen-turbo qwen-max qwen-plus qwen3.5-27b glm-5 deepseek-v3.2 \
              gpt-5.4 gpt-5.4-mini gpt-5.5 \
              claude-sonnet-4-6 claude-opus-4-6 claude-opus-4-7; do
-    python code/scripts/capbound_session_api.py \
+    python code/baselines/capbound_session_api.py \
         --agent_name $model \
         --n_sessions 50 \
         --n_workers 4 \
@@ -43,14 +43,14 @@ done
 
 # Open-weights models (require vLLM server)
 # Start vLLM server first: vllm serve /path/to/llama3-8b-instruct --port 8100
-python code/scripts/capbound_session.py --n_sessions 50  # Llama-3-8B
+python code/baselines/capbound_session.py --n_sessions 50  # Llama-3-8B
 # Edit AGENT_URL/AGENT_MODEL_PATH in capbound_session.py for Mistral-7B
 ```
 
 ### 2. Compute baseline metrics
 
 ```bash
-python code/scripts/run_all_baselines_v4.py --batch --output_dir data/aggregates/
+python code/baselines/run_all_baselines_v4.py --batch --output_dir data/aggregates/
 ```
 
 ### 3. Held-out contamination control (n=6 frontier)
@@ -63,7 +63,7 @@ python code/scripts/eval_heldout_n6.py
 
 ## Configuration
 
-API endpoints and credentials are configured via environment variables in `code/scripts/capbound_session_api.py`. The released code has all keys redacted (`sk-REDACTED`); supply your own:
+API endpoints and credentials are configured via environment variables in `code/baselines/capbound_session_api.py`. The released code has all keys redacted (`sk-REDACTED`); supply your own:
 
 - `DASHSCOPE_KEY` for Qwen/GLM/DeepSeek
 - Proxy endpoint for Claude/GPT via the `claude-zhongzhuan.cloud` (Claude) and `lucen.cc` (GPT) gateways
