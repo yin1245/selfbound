@@ -1,0 +1,9 @@
+# Chinese-language paper artifacts (internal accessibility version, not for NeurIPS submission)
+paper/main_zh.tex
+paper/LADDER_zh.pdf
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/*.synctex.gz

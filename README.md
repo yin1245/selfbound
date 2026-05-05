@@ -40,9 +40,7 @@ ladder-bench/
 │
 └── paper/
     ├── LADDER.pdf       # Anonymized EN submission PDF (NeurIPS, 9 main pages)
-    ├── LADDER_zh.pdf    # Chinese translation (for accessibility, not submission)
     ├── main.tex                    # EN LaTeX source
-    ├── main_zh.tex                 # ZH LaTeX source
     ├── references.bib              # Bibliography
     └── figures/                    # 10 figures
 ```
