@@ -34,7 +34,7 @@
 % 摘要
 %==============================================================================
 \begin{abstract}
-用户学得到 LLM 智能体擅长什么、哪里容易翻车，但智能体自己学不到。我们追问一个机制性问题：这种自我建模究竟在哪一层崩坏？三种候选——H1 输出通道、H2 先验元认知、H3 噪声鲁棒在线推理——被现有基准混在一起。我们构造 \textbf{SelfBound}：一条 oracle 包夹的五级基线阶梯（L0 原始置信度 $\to$ L4 完整统计预言机），相邻两级之比能逐一排除一个候选；评测指标是 \textbf{Capability Boundary Fidelity（CBF）}，一个与 ECE 等每查询校准互补的逐域自评估指标。在 15 个模型上，阶梯给出一条干净的演绎：\textbf{H1 被排除}（GT-SelfStats CBF $\geq 0.99$）；\textbf{H2 仅部分成立、按家族分裂}，不是瓶颈（GPT 零样本达 0.795--0.859，Claude 三个模型反而低于 NoMemory）；\textbf{H3 才是真正的失败位点}——一阶单评分者方法在 NoMemory 附近聚簇，而显式 \emph{二阶} 估计器（非对称 Dawid--Skene、GLAD）显著超过 L1 先验，GLAD 在全部 6 个前沿模型上击败 L1（$p=0.031$）。同样的演绎在跨任务上重复（4 个任务族中 12/15 模型的相对可靠性方向反转），说明每任务边界建模是结构性必要。我们将该失败模式命名为 \textbf{Self-Boundary Collapse}（自我边界坍缩），并将噪声鲁棒二阶在线推理隔离为开放问题；阶梯协议、CBF 指标、跨家族用户模拟器与轮次轨迹数据集作为诊断基础设施在匿名仓库公开。
+用户学得到 LLM 智能体擅长什么、哪里容易翻车，但智能体自己学不到。我们追问一个机制性问题：这种自我建模究竟在哪一层崩坏？三种候选——H1 输出通道、H2 先验元认知、H3 噪声鲁棒在线推理——被现有基准混在一起。我们构造 \textbf{SelfBound}：一条 oracle 包夹的五级基线阶梯（L0 原始置信度 $\to$ L4 完整统计预言机），相邻两级之比能逐一排除一个候选；评测指标是 \textbf{Capability Boundary Fidelity（CBF）}，一个与 ECE 等每查询校准互补的逐域自评估指标。在 15 个模型上，阶梯给出一条干净的演绎：\textbf{H1 被排除}（GT-SelfStats CBF $\geq 0.99$）；\textbf{H2 仅部分成立、按家族分裂}，不是瓶颈（GPT 零样本达 0.795--0.859，Claude 三个模型反而低于 NoMemory）；\textbf{H3 才是真正的失败位点}——一阶单评分者方法在 NoMemory 附近聚簇，而显式 \emph{二阶} 估计器（非对称 Dawid--Skene、GLAD）显著超过 L1 先验，GLAD 在全部 6 个前沿模型上击败 L1（$p=0.031$）。该模式在跨任务上重复（4 个任务族中 12/15 模型的相对可靠性方向反转），表明每任务边界建模也是必要的。我们将该失败模式命名为 \textbf{Self-Boundary Collapse}（自我边界坍缩），并将噪声鲁棒二阶在线推理识别为核心剩余挑战；阶梯协议、CBF 指标、跨家族用户模拟器与轮次轨迹数据集作为诊断基础设施在匿名仓库公开。
 \end{abstract}
 %==============================================================================
 % 1 引言
@@ -47,11 +47,11 @@
 
 LLM 智能体在多轮长程场景中的应用日益普遍，包括客服、编码、研究与工具使用。随着时间推移，用户会形成对智能体在哪些领域可靠的经验性认识；智能体本身却通常没有相应的自我模型：每次会话从零开始，并随上下文结束而丢弃自身证据。这种不对称性已有充分记录，但其背后的 \emph{能力差距} 仍未被清晰定位。具体而言，我们尚不清楚智能体的自我建模究竟在 \emph{哪一层} 机制上失败。
 
-我们区分三种可能的瓶颈。在 H1 下，问题出在输出通道：模型无法格式化并发出每个领域的数值统计信息。在 H2 下，模型缺乏对自身分领域能力的准确先验，因此任何有用的自我评估都必须从交互中 \emph{学习}。在 H3 下，模型能给出合理的先验，却无法从 \emph{噪声} 的隐式用户反馈中可靠更新。这三种假设导向不同的研究路径：H1 暗示对数值报告的微调，H2 指向预训练阶段的元认知课程，H3 则呼唤噪声鲁棒的在线估计。已有的智能体自我知识工作 \citep{barkan2026capable, hu2026memoryagent}、校准研究~\citep{kadavath2022language, guo2017calibration, xiong2024can} 与记忆系统~\citep{packer2023memgpt, mem02025, tan2025rmm, xu2025amem, li2025memos} 度量了重要的症状，但没有隔离出哪一种瓶颈是真正的成因。我们将这种失败模式——智能体反复接收反馈、却无法将其转化为稳定的分领域自我模型——称为 \textbf{Self-Boundary Collapse}（自我边界坍缩）。本文的核心问题是，这种失败出现在 H1/H2/H3 阶梯的哪一层。
+我们区分三种可能的瓶颈。在 H1 下，输出通道是限制性因素：模型无法格式化并发出每个领域的数值统计信息。在 H2 下，模型缺乏对自身分领域能力的准确先验，因此任何有用的自我评估都必须从交互中 \emph{学习}。在 H3 下，模型能给出合理的先验，却无法从 \emph{噪声} 的隐式用户反馈中可靠更新。这三种假设导向不同的干预目标：H1 暗示对数值报告的微调，H2 指向预训练阶段的元认知课程，H3 则呼唤噪声鲁棒的在线估计。已有的智能体自我知识工作 \citep{barkan2026capable, hu2026memoryagent}、校准研究~\citep{kadavath2022language, guo2017calibration, xiong2024can} 与记忆系统~\citep{packer2023memgpt, mem02025, tan2025rmm, xu2025amem, li2025memos} 度量了重要的症状，但没有隔离出哪一种瓶颈是真正的成因。我们将这种失败模式——智能体反复接收反馈、却无法将其转化为稳定的分领域自我模型——称为 \textbf{Self-Boundary Collapse}（自我边界坍缩）。本文的核心问题是，这种失败出现在 H1/H2/H3 阶梯的哪一层。
 
-我们以 SelfBound 来研究这一问题。该基准围绕一条由 oracle 包夹的 \emph{五级基线阶梯} 组织：L0 原始置信度（NoMemory）、L1 零样本每领域先验、L2 噪声反馈学习器（LLM 自评估、经典重校准、EM-Joint、二阶 Dawid--Skene/GLAD）、L3 二元标签预言机、L4 完整统计预言机。相邻比较定位失败：L4--L3 检验输出通道（H1），L3--L1 检验先验（H2），L3--L2 检验噪声反馈下的在线推理（H3）。协议将每个智能体与领域异构的模拟用户配对，模拟用户在专业域内 75\% 可靠、域外 46\%，并采用跨家族路由以缓解我们在 \S\ref{sec:bottleneck} 中量化的双重角色偏差。会话长度为 50 轮，所得分领域自我模型用 \textbf{Capability Boundary Fidelity（CBF）} 评估；CBF 是我们引入的指标，与 ECE 等每查询校准指标互补。
+我们以 SelfBound 来研究这一问题。该基准围绕一条由 oracle 包夹的 \emph{五级基线阶梯} 组织：L0 原始置信度（NoMemory）、L1 零样本每领域先验、L2 噪声反馈学习器（LLM 自评估、经典重校准、EM-Joint、二阶 Dawid--Skene/GLAD）、L3 二元标签预言机、L4 完整统计预言机。相邻比较定位失败：L4--L3 检验输出通道（H1），L3--L1 检验先验（H2），L3--L2 检验噪声反馈下的在线推理（H3）。协议将每个智能体与一个可靠性按领域而异的模拟用户配对（专业域内 75\%、域外 46\%），并采用跨家族路由以缓解我们在 \S\ref{sec:bottleneck} 中量化的双重角色偏差。会话长度为 50 轮，所得分领域自我模型用 \textbf{Capability Boundary Fidelity（CBF）} 评估；CBF 是我们引入的指标，与 ECE 等每查询校准指标互补。
 
-在 15 个模型、7 个家族、47K+ 次交互上，阶梯给出了清晰的定位。H1 被排除：GT-SelfStats 在每个模型上 CBF $\geq 0.99$，说明当分领域真实统计量被放入提示时，模型能通过输出通道复现它们。H2 真实存在，但并非主要瓶颈。零样本先验对 GPT 模型是最强的非预言机基线（GPT-5.4 上 CBF 0.795、GPT-5.5 上 0.859），但在三个 Claude 模型上低于 NoMemory（0.460--0.482 对比 0.557--0.603），前沿均值为 0.640。也就是说，先验自我知识在部分家族中存在、在另一些家族中缺失，但都未达到 oracle 上限。主要失败位点是 H3。一阶单评分者方法（包括 UF-PDC、Platt、HistBin、Bayes 与简单 EM-Joint）在前沿上聚集在 NoMemory 附近（CBF 0.628--0.634），无法从噪声反馈中恢复分领域真值。显式 \emph{二阶} 估计器表现明显更好：非对称 Dawid--Skene 的前沿均值为 0.755，GLAD 为 0.712；GLAD 在全部 6 个前沿模型上击败 L1（双侧 Wilcoxon $p=0.031$）。剩余 L2$\to$L3 约 0.30 CBF 的 gap 仍然存在，但这一 gap 在结构上是可处理的，而非根本性的墙。
+在 15 个模型、7 个家族、47K+ 次交互上，阶梯给出了清晰的定位。H1 被排除：GT-SelfStats 在每个模型上 CBF $\geq 0.99$，说明当分领域真实统计量被放入提示时，模型能通过输出通道复现它们。H2 真实存在，但并非主要瓶颈。零样本先验对 GPT 模型是最强的非预言机基线（GPT-5.4 上 CBF 0.795、GPT-5.5 上 0.859），但在三个 Claude 模型上低于 NoMemory（0.460--0.482 对比 0.557--0.603），前沿均值为 0.640。也就是说，先验自我知识在部分家族中存在、在另一些家族中缺失，但都未达到 oracle 上限。主要失败位点是 H3。一阶单评分者方法（包括 UF-PDC、Platt、HistBin、Bayes 与简单 EM-Joint）在前沿上聚集在 NoMemory 附近（CBF 0.628--0.634），无法从噪声反馈中恢复分领域准确率。显式 \emph{二阶} 估计器表现明显更好：非对称 Dawid--Skene 的前沿均值为 0.755，GLAD 为 0.712；GLAD 在全部 6 个前沿模型上击败 L1（双侧 Wilcoxon $p=0.031$）。剩余 L2$\to$L3 在前沿上约为 0.25 CBF（最佳 L2 DS-asym 0.755 vs.\ OraclePDC 1.000）；该 gap 看起来可缩小，而非根本性的。
 
 \begin{figure*}[t]
 \centering
@@ -200,25 +200,25 @@ Claude-Opus-4-6 (90\%) & 0.594 & 0.460 & \textbf{0.680} & 0.618 & 0.597 & 0.597 
 
 表~\ref{tab:main} 报告了所有15个模型在五级基准梯上的会话结束时的CBF。可以看到三种诊断模式。
 
-\paragraph{算法L2在新的前沿行上崩溃，被ZS/LSA干净地打破。} 对于新添加的两个前沿模型，五个\emph{算法}L2基线（UF-PDC、Platt、HistBin、Bayes、EM-Joint）在NoMem附近聚集（GPT-5.5: 0.601--0.612，全部比 NoMem 0.570 高约 0.03--0.04；Claude-Opus-4-7: 0.570--0.593，全部比 NoMem 0.557 高约 0.01--0.04）。有了50$\times$50的ZS/LSA值后，LSA和L1先验在GPT-5.5上干净地打破了这种崩溃（\textbf{LSA 0.902, ZS-SK 0.859}，LSA 比最佳算法 L2 高 0.290，ZS-SK 比之高 0.247），并且在Claude-Opus-4-7上也是如此（LSA 0.641 vs. NoMem 0.557, $+$0.084）。在 50$\times$50 协议下，模式如下：算法L2方法在每个前沿智能体上都无法超过NoMem；LSA在所有6个前沿行上都明显超过了NoMem；ZS在所有3个GPT行上超过了NoMem，但在所有3个Claude行上低于NoMem（其中ZS估计值系统性地过高）。特别是，GPT-5.5现在被LSA（0.902，基准测试中最高的非预言机CBF）主导，其次是ZS（0.859）；两者都显著超过了每个算法L2方法（$\le$0.612），并且先前10$\times$50异常中LSA明显低于NoMem（0.623）的情况没有再现。保留评估和二阶估计器（Dawid--Skene、GLAD）报告于最初的 4 个前沿模型；MMLU-Pro 与 BBH 污染控制（附录~\ref{app:heldout}、\ref{app:heldout_bbh}）覆盖全部 6 个前沿模型。
+\paragraph{算法 L2 在前沿模型上崩溃，但 ZS 和 LSA 不受影响。} 对于新添加的两个前沿模型，五个\emph{算法}L2基线（UF-PDC、Platt、HistBin、Bayes、EM-Joint）在NoMem附近聚集（GPT-5.5: 0.601--0.612，全部比 NoMem 0.570 高约 0.03--0.04；Claude-Opus-4-7: 0.570--0.593，全部比 NoMem 0.557 高约 0.01--0.04）。有了50$\times$50的ZS/LSA值后，LSA和L1先验在GPT-5.5上干净地打破了这种崩溃（\textbf{LSA 0.902, ZS-SK 0.859}，LSA 比最佳算法 L2 高 0.290，ZS-SK 比之高 0.247），并且在Claude-Opus-4-7上也是如此（LSA 0.641 vs. NoMem 0.557, $+$0.084）。在 50$\times$50 协议下，模式如下：算法L2方法在每个前沿智能体上都无法超过NoMem；LSA在所有6个前沿行上都明显超过了NoMem；ZS在所有3个GPT行上超过了NoMem，但在所有3个Claude行上低于NoMem（其中ZS估计值系统性地过高）。特别是，GPT-5.5现在被LSA（0.902，基准测试中最高的非预言机CBF）主导，其次是ZS（0.859）；两者都显著超过了每个算法L2方法（$\le$0.612），并且先前 10$\times$50 中 LSA 远低于 NoMem 的结果（0.623）没有再现。保留评估和二阶估计器（Dawid--Skene、GLAD）报告于最初的 4 个前沿模型；MMLU-Pro 与 BBH 污染控制（附录~\ref{app:heldout}、\ref{app:heldout_bbh}）覆盖全部 6 个前沿模型。
 
 \paragraph{H1被排除为限制因素（L4 $\approx$ 1.0）。}
 GT-SelfStats 在所有 15 个模型上达到了 CBF $\geq 0.992$（最差差距 0.008，Claude-Sonnet-4-6）。当真实的每领域统计信息被放入提示中时，每个测试的模型都能够格式化并输出它们：L2--L1 差距不在输出通道中。
 
-\paragraph{H2 按模型家族清晰划分：GPT 校准良好，Claude 过度自信。} 表~\ref{tab:main} 中的同级均值使情况变得清晰：在所有 6 个前沿模型中，LSA 的 CBF 平均为 0.748，ZS-SK 为 0.640，最佳算法 L2 方法（UF-PDC）为 0.634——LSA 比 ZS 高出 0.108，这与之前 10$\times$50 结果在 Claude 上的结果相反。LSA 在 Claude-Sonnet-4-6 (0.720)、Claude-Opus-4-6 (0.680)、Claude-Opus-4-7 (0.641) 和 GPT-5.5 (0.902，基准最高非预言机值) 上获胜；ZS 在 GPT-5.4 (0.795) 和 GPT-5.4-mini (0.769) 上获胜，在这些模型上 ZS 估计校准良好。前沿 4-2 分裂有利于 LSA，完全由三个 Claude 模型驱动——在这些模型上 ZS 估计相对于真实领域准确率系统性地过高，且低于 NoMem 和算法 L2 集群。相比之下，LSA 在每个前沿行上都超过所有算法 L2 方法（最小差距：Claude-Opus-4-7 上对比 UF-PDC 为 +0.048）。 ZS 看不到会话历史，也没有反馈，但 50$\times$50 更新将 ZS 放在强中层（n=3）的第一位：层级均值 0.744 (ZS) 对比 0.717 (最佳 L2: EM-Joint)。个别结果是分裂的：ZS 在 Qwen-Plus (0.735 对比 LSA 0.435 灾难性失败) 上获胜；LSA 在 Qwen-Max (0.781 对比 ZS 0.766, +0.015) 上获胜；Qwen3.5-27B 是三者平局 0.731 (NoMem = ZS = LSA)。 对于中层模型，先验是部分的；对于最弱的模型，先验与 NoMemory 完全匹配（Mistral、GLM-5：ZS = NoMem = 平凡的 $\hat p \approx 0.5$ 锚点）。因此瓶颈位置取决于智能体：对于前沿和强中层智能体，先验就是答案；对于中层智能体，EM-Joint 和 LSA 适度高于先验；对于弱智能体，先验和反馈推断都是无信息的，平凡的 $\hat{p}=0.5$ NoMemory 锚点默认获胜。
+\paragraph{H2 按模型家族清晰划分：GPT 校准良好，Claude 过度自信。} 表~\ref{tab:main} 中的同级均值澄清了模式：在所有 6 个前沿模型中，LSA 的 CBF 平均为 0.748，ZS-SK 为 0.640，最佳算法 L2 方法（UF-PDC）为 0.634——LSA 比 ZS 高出 0.108，这与之前 10$\times$50 结果在 Claude 上的结果相反。LSA 在 Claude-Sonnet-4-6 (0.720)、Claude-Opus-4-6 (0.680)、Claude-Opus-4-7 (0.641) 和 GPT-5.5 (0.902，基准最高非预言机值) 上获胜；ZS 在 GPT-5.4 (0.795) 和 GPT-5.4-mini (0.769) 上获胜，在这些模型上 ZS 估计校准良好。前沿 4-2 分裂有利于 LSA，完全由三个 Claude 模型驱动——在这些模型上 ZS 估计相对于真实领域准确率系统性地过高，且低于 NoMem 和算法 L2 集群。相比之下，LSA 在每个前沿行上都超过所有算法 L2 方法（最小差距：Claude-Opus-4-7 上对比 UF-PDC 为 +0.048）。 ZS 看不到会话历史，也没有反馈，但 50$\times$50 更新将 ZS 放在强中层（n=3）的第一位：层级均值 0.744 (ZS) 对比 0.717 (最佳 L2: EM-Joint)。个别结果是分裂的：ZS 在 Qwen-Plus (0.735 对比 LSA 0.435 灾难性失败) 上获胜；LSA 在 Qwen-Max (0.781 对比 ZS 0.766, +0.015) 上获胜；Qwen3.5-27B 是三者平局 0.731 (NoMem = ZS = LSA)。 对于中层模型，先验是部分的；对于最弱的模型，先验与 NoMemory 完全匹配（Mistral、GLM-5：ZS = NoMem = 平凡的 $\hat p \approx 0.5$ 锚点）。因此瓶颈位置取决于智能体：对于前沿和强中层智能体，先验是最强的非预言机信号；对于中层智能体，EM-Joint 和 LSA 适度高于先验；对于弱智能体，先验和反馈推断都是无信息的，平凡的 $\hat{p}=0.5$ NoMemory 锚点保持最强。
 
-\paragraph{H3 被定位：一阶在线学习失败，二阶估计器与上下文聚合成功。} 五个 \emph{一阶} L2 反馈学习方法（UF-PDC、Platt-Online、HistBin-Online、Bayes-Domain、EM-Joint）在 0.69--0.72 的平均 CBF 上紧密聚集，并未能在前沿模型上超过 L1 ZS（平均 L2 0.628--0.634 对比 L1 ZS 0.640）。 三类方法确实在前沿模型（n=6）上超过了 L1 先验：GLAD 达到平均 CBF 0.712（Wilcoxon $p=0.031$，6/6 胜利，二项式 $p=0.016$，Cohen's $d=1.42$），DS-asym 0.755（单侧 Wilcoxon $p=0.047$，5/6 胜利，$d=1.66$），以及 LSA 0.748（平均 +0.108，4/6 胜利，Wilcoxon $p=0.156$ 由于 GPT 模型上 ZS 校准良好而膨胀）。GLAD 在 6 个前沿模型上方向一致（每模型 delta $+0.028$ 到 $+0.118$；均值 delta 的 bootstrap 95\% CI $[+0.045,\,+0.099]$，10K 重采样；详细每模型值见附录~\ref{app:power}）；6 个配对观察下，我们将其作为效应方向测试而非总体级幅度估计。在非前沿层级上，EM-Joint 成为领导者（中层 +0.012 对比 NoMem；弱层 +0.006），在 Llama-3-8B (0.732) 和 Qwen2.5-7B (0.753) 上直接获胜。 原始 H3 框架（“噪声反馈在线推断是瓶颈”）仅适用于一阶单评分估计器；二阶估计器与上下文聚合可显著超越 L1，但仍未触及 L3 上限——实际瓶颈是约 0.20 的剩余 L2 与 L3 差距（最强二阶方法 DS-asym 0.755 与 OraclePDC 1.000 之间的差距）。50$\times$50 协议同时揭示了：几个先前在 10$\times$50 样本中表现最好的 L2 基线实际上在采样噪声范围内与 NoMemory 相当——样本大小很重要。
+\paragraph{H3 被定位：一阶在线学习失败，二阶估计器与上下文聚合成功。} 五个 \emph{一阶} L2 反馈学习方法（UF-PDC、Platt-Online、HistBin-Online、Bayes-Domain、EM-Joint）在 0.69--0.72 的平均 CBF 上紧密聚集，并未能在前沿模型上超过 L1 ZS（平均 L2 0.628--0.634 对比 L1 ZS 0.640）。 三类方法确实在前沿模型（n=6）上超过了 L1 先验：GLAD 达到平均 CBF 0.712（Wilcoxon $p=0.031$，6/6 胜利，二项式 $p=0.016$，Cohen's $d=1.42$），DS-asym 0.755（单侧 Wilcoxon $p=0.047$，5/6 胜利，$d=1.66$），以及 LSA 0.748（平均 +0.108，4/6 胜利，Wilcoxon $p=0.156$ 由于 GPT 模型上 ZS 校准良好而膨胀）。GLAD 在 6 个前沿模型上方向一致（每模型 delta $+0.028$ 到 $+0.118$；均值 delta 的 bootstrap 95\% CI $[+0.045,\,+0.099]$，10K 重采样；详细每模型值见附录~\ref{app:power}）；6 个配对观察下，我们将其作为效应方向测试而非总体级幅度估计。在非前沿层级上，EM-Joint 成为领导者（中层 +0.012 对比 NoMem；弱层 +0.006），在 Llama-3-8B (0.732) 和 Qwen2.5-7B (0.753) 上直接获胜。 原始 H3 框架（“噪声反馈在线推断是瓶颈”）仅适用于一阶单评分估计器；二阶估计器与上下文聚合可显著超越 L1，但仍未触及 L3 上限——实际瓶颈是前沿上约 0.25 的剩余 L2 与 L3 差距（最强二阶方法 DS-asym 0.755 与 OraclePDC 1.000）；跨模型平均差距（最佳 L2 LSA 0.702 vs.\ OraclePDC）约为 0.30。50$\times$50 协议同时揭示了：几个先前在 10$\times$50 样本中表现最好的 L2 基线实际上在采样噪声范围内与 NoMemory 相当——样本大小很重要。
 
 \paragraph{能力谱和最佳基线分配。}
-通过50$\times$50 协议（表~\ref{tab:main}），"最佳"非预言机基线（表~\ref{tab:main} 中的"Best"列，定义为 8 个基线列 L0 NoMem + L1 ZS + 6$\times$L2 上的 argmax）在 15 个模型中分为三类：\textbf{LSA 在 6 个模型上获胜}（DeepSeek-V3.2, Qwen-Max, GPT-5.5, Claude-Sonnet-4-6, Claude-Opus-4-6, Claude-Opus-4-7），EM-Joint 在 5 个模型上获胜（Mistral-7B, Llama-3-8B, GLM-5, Qwen2.5-7B, Qwen3.5-27B——注意在 Mistral-7B 上 EM/NoMem/ZS/LSA 之间的差异在 $\pm 0.003$ 以内，所以 EM 的获胜本质上是与平凡 $\hat{p}\approx 0.5$ 锚点的并列），以及 \textbf{ZS-SK 在 4 个模型上获胜}（Qwen-Turbo, Qwen-Plus, GPT-5.4-mini, GPT-5.4）。在此 argmax 下，NoMemory 在任何模型上都没有严格获胜。\emph{注意：}附录~\ref{app:friend_or_foe}中的"反馈作为朋友或敌人"的分析使用了正交的头对头 ZS 与 LSA 标准；因此，一个模型可以在这里出现在"以 LSA 为主导的最佳 8 个"中，而在头对头比较中却出现"ZS 胜过 LSA"，因为标准不同。
+通过50$\times$50 协议（表~\ref{tab:main}），"最佳"非预言机基线（表~\ref{tab:main} 中的"Best"列，定义为 8 个基线列 L0 NoMem + L1 ZS + 6$\times$L2 上的 argmax）在 15 个模型中分为三类：\textbf{LSA 在 6 个模型上获胜}（DeepSeek-V3.2, Qwen-Max, GPT-5.5, Claude-Sonnet-4-6, Claude-Opus-4-6, Claude-Opus-4-7），EM-Joint 在 5 个模型上获胜（Mistral-7B, Llama-3-8B, GLM-5, Qwen2.5-7B, Qwen3.5-27B——注意在 Mistral-7B 上 EM/NoMem/ZS/LSA 之间的差异在 $\pm 0.003$ 以内，所以 EM 的获胜本质上是与平凡 $\hat{p}\approx 0.5$ 锚点的并列），以及 \textbf{ZS-SK 在 4 个模型上获胜}（Qwen-Turbo, Qwen-Plus, GPT-5.4-mini, GPT-5.4）。按此标准，NoMemory 在任何模型上都不是唯一最佳基线。\emph{注意：}附录~\ref{app:friend_or_foe}中的"反馈作为朋友或敌人"的分析使用了正交的头对头 ZS 与 LSA 标准；因此，一个模型可以在这里出现在"以 LSA 为主导的最佳 8 个"中，而在头对头比较中却出现"ZS 胜过 LSA"，因为标准不同。
 
-\paragraph{自适应选择诊断 R4。} 上述能力划分给出一个简单的无参数选择规则 R4：\emph{当 $\text{ZS}(m){>}\text{NoMem}(m)$ 时选择 L1（ZS），否则选择 L2（LSA）}。R4 在 $n{=}15$ 上达到平均 CBF 0.722，关闭了 L1/L2 混合家族上始终使用 ZS 到每模型预言机差距的约 72\%。每模型符号检验对始终 ZS（$p{=}0.22$）和始终 LSA（$p{=}0.69$）均不显著，表明 R4 在模型间重新分配胜利而不严格占优于任一基线。我们将 R4 用作 L1/L2 家族的诊断锚点，类似于探针分类器~\citep{tenney2019bertology} 或影响函数~\citep{koh2017influence}；前沿经验上限仍然是 DS-asym 在 CBF 0.755。完整 LOOCV、每模型细分和符号检验算术见附录~\ref{app:r4}。
+\paragraph{自适应选择诊断 R4。} 上述能力划分给出一个简单的诊断规则 R4：\emph{当 $\text{ZS}(m){>}\text{NoMem}(m)$ 时选择 L1（ZS），否则选择 L2（LSA）}。R4 在 $n{=}15$ 上达到平均 CBF 0.722，关闭了 L1/L2 混合家族上始终使用 ZS 到每模型预言机差距的约 72\%。每模型符号检验对始终 ZS（$p{=}0.22$）和始终 LSA（$p{=}0.69$）均不显著，表明 R4 在模型间重新分配胜利而不严格占优于任一基线。我们将 R4 用作 L1/L2 家族的诊断锚点，类似于探针分类器~\citep{tenney2019bertology} 或影响函数~\citep{koh2017influence}；前沿经验上限仍然是 DS-asym 在 CBF 0.755。完整 LOOCV、每模型细分和符号检验算术见附录~\ref{app:r4}。
 
 \section{诊断：通过五级阶梯定位瓶颈}
 \label{sec:analysis}
 \label{sec:bottleneck}
 
-五级阶梯的设计使得相邻的比较能够隔离子能力。图~\ref{fig:ladder}可视化了每个级别的平均 CBF：(a) 所有 15 个模型；(b) 6 个前沿模型，直接暴露诊断差距。
+图~\ref{fig:ladder} 将表~\ref{tab:main} 的逐模型结果汇总为一个垂直阶梯，其中每个相邻 gap 充当子能力测试：(a) 所有 15 个模型；(b) 6 个前沿模型，直接暴露诊断差距。
 
 \begin{figure*}[t]
 \centering
@@ -229,22 +229,22 @@ GT-SelfStats 在所有 15 个模型上达到了 CBF $\geq 0.992$（最差差距 
 
 垂直结构隔离了每个子能力。\textbf{L4 vs L3（$<$1\% 差距）}：输出通道不是限制因素（H1 被排除）。\textbf{L3 vs L2（$\sim$0.30 差距）}：经验瓶颈——给定干净标签智能体达到 1.0，但没有方法能从噪声 LLM 解码反馈中恢复信号（H3 得到确认）。L2 vs L1（n=15: 0.674--0.686 vs 0.685；n=6 前沿: 0.628--0.634 vs 0.640）：L1 ZS 与算法 L2 集群打平或更高，只有二阶 L2 估计器（DS-asym 0.755、GLAD 0.712）和上下文 LSA（0.748）在前沿上超过 L1（附录~\ref{app:friend_or_foe}、\ref{app:ds_glad}）。
 
-\subsection{跨任务异质性：每任务边界是结构性必要}
+\subsection{跨任务异质性：每任务边界模型是必要的}
 \label{sec:ablation}
 
-在 MMLU、GSM8K、HumanEval 和 BFCL 上，同一模型表现出定性不同的校准机制：在协议受控的扩展子集（GSM8K/HumanEval/BFCL 同协议）中，15 个模型有 12 个出现 Gap 符号反转，且在 MMLU 上学习的 Platt 缩放对大多数模型在 GSM8K 上是\emph{有害的}。因此，每任务边界建模是结构性必要而非便利。完整每任务表、协议受控子集分析和 Platt 迁移细节见附录~\ref{app:proto_controlled} 和表~\ref{tab:fourtask_overview}。
+在 MMLU、GSM8K、HumanEval 和 BFCL 上，同一模型表现出定性不同的校准机制：在协议受控的扩展子集（GSM8K/HumanEval/BFCL 同协议）中，15 个模型有 12 个出现 Gap 符号反转，且在 MMLU 上学习的 Platt 缩放对大多数模型在 GSM8K 上是\emph{有害的}。因此，每任务边界建模是必要的，而非可选的细化。完整每任务表、协议受控子集分析和 Platt 迁移细节见附录~\ref{app:proto_controlled} 和表~\ref{tab:fourtask_overview}。
 \section{局限性和未来工作}
 \label{sec:limitations}
 
 \paragraph{评测范围。} SelfBound 在 50 轮 MMLU 协议下评估每领域自我知识，反馈通道为受控合成（专业域内 75\%、域外 46\%，跨家族路由以缓解双重角色偏差）。三个扩展任务（GSM8K、HumanEval、BFCL）使用单次两步协议，因为它们不具备 CBF 所需的多领域结构；\S\ref{sec:ablation} 的跨任务异质性结论通过协议受控子集分析（同协议三任务的 12/15 符号反转率；附录~\ref{app:proto_controlled}）独立验证。
 
-\paragraph{下一步。} 最直接的下一步是开展人类反馈试点：用真实用户替换合成通道，检验本文得到的 H3 排名是否能迁移。我们也计划在扩展任务（如 GSM8K、HumanEval、BFCL）上复刻完整的 L0--L4 阶梯，并将前沿切片扩大到 $n\!\approx\!18$，以更精细地区分 DS-asym 与 GLAD（依据附录~\ref{app:power} 的功效计算）。更进一步的扩展是从有限的问答会话推进到 SWE-Bench 风格的开放式多步智能体场景。
+\paragraph{下一步。} 最直接的下一步是开展人类反馈试点：用真实用户替换合成通道，检验本文得到的 H3 排名是否能迁移。我们也计划在扩展任务（如 GSM8K、HumanEval、BFCL）上复刻完整的 L0--L4 阶梯，并将前沿模型子集扩大到 $n\!\approx\!18$，以更精细地区分 DS-asym 与 GLAD（依据附录~\ref{app:power} 的功效计算）。更进一步的扩展是从有限的问答会话推进到 SWE-Bench 风格的开放式多步智能体场景。
 
 
 \section{结论}
 \label{sec:conclusion}
 
-我们追问了一个机制性的问题：当反馈带噪时，LLM 智能体的自我建模究竟在哪里失败？SelfBound 的五级 oracle 阶梯排除了输出通道（H1：在真值提示下 CBF $\geq 0.99$）、说明零样本先验只是部分成立且按家族分裂、并不是瓶颈（H2），并将失败定位到噪声鲁棒的二阶在线推理（H3）：一阶单评分者方法无法从噪声反馈中恢复分领域真值，而显式二阶估计器——非对称 Dawid--Skene 与 GLAD——显著缩小了 L1$\to$L3 的 gap（GLAD 在全部 6 个前沿模型上击败 L1，$p=0.031$），但尚未消除。我们将该失败模式命名为 \textbf{Self-Boundary Collapse}（自我边界坍缩），并发布阶梯协议、CBF 指标、跨家族用户模拟器与公开排行榜，让社区能够把新二阶估计器对照一个精确的 oracle 包夹目标进行评测，而不再依赖临时基线。附录~\ref{app:r4} 的无参数选择规则 R4 作为任何提交方法都应清除的验证下界。开放问题是具体的：一个能闭合 L2$\to$L3 剩余 gap（前沿上约 0.30 CBF）的噪声鲁棒在线估计器，将构成智能体自我建模上一项可量化的真实进展。
+我们追问了一个机制性的问题：当反馈带噪时，LLM 智能体的自我建模究竟在哪里失败？SelfBound 的五级 oracle 阶梯排除了输出通道（H1：在真值提示下 CBF $\geq 0.99$）、说明零样本先验只是部分成立且按家族分裂、并不是瓶颈（H2），并将失败定位到噪声鲁棒的二阶在线推理（H3）：一阶单评分者方法无法从噪声反馈中恢复分领域真值，而显式二阶估计器——非对称 Dawid--Skene 与 GLAD——显著缩小了 L1$\to$L3 的 gap（GLAD 在全部 6 个前沿模型上击败 L1，$p=0.031$），但尚未消除。我们将该失败模式命名为 \textbf{Self-Boundary Collapse}（自我边界坍缩），并发布阶梯协议、CBF 指标、跨家族用户模拟器与排行榜协议，让社区能够把新二阶估计器对照一个精确的 oracle 包夹目标进行评测，而非依赖松散匹配的基线。附录~\ref{app:r4} 的无参数选择规则 R4 作为任何提交方法都应清除的验证下界。开放问题是具体的：一个能闭合 L2$\to$L3 剩余 gap（前沿上约 0.25 CBF）的噪声鲁棒在线估计器，将构成智能体自我建模上一项可量化的真实进展。
 
 %==============================================================================
 % 致谢
