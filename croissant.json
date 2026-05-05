@@ -68,7 +68,7 @@
     "benchmark"
   ],
   "isLiveDataset": false,
-  "citeAs": "@inproceedings{ladder2026, title = {LADDER: A Diagnostic Benchmark for LLM Agent Self-Knowledge under Noisy Feedback}, author = {Anonymous}, booktitle = {NeurIPS 2026 Datasets and Benchmarks Track}, year = {2026}}",
+  "citeAs": "@inproceedings{ladder2026, title = {LADDER: LLM Agent Diagnostic of Domain-level Estimation Reliability}, author = {Anonymous}, booktitle = {NeurIPS 2026 Datasets and Benchmarks Track}, year = {2026}}",
   "creator": {
     "@type": "Person",
     "name": "Anonymous (double-blind submission)"
@@ -81,9 +81,9 @@
   "rai:dataCollectionType": "Synthetic generation via LLM API and vLLM inference",
   "rai:dataCollectionTimeframe": [
     {
-      "@value": "2026-04-15",
-      "startDate": "2026-04-15",
-      "endDate": "2026-05-03"
+      "@value": "2026-04-01",
+      "startDate": "2026-04-01",
+      "endDate": "2026-05-05"
     }
   ],
   "rai:dataPreprocessingProtocol": "Per-model tier stratification: each model's per-subject accuracy is computed on a disjoint 10-question/subject calibration split, then 20 MMLU subjects are partitioned into Strong (top third), Mid (middle), Weak (bottom third) tiers relative to that model's accuracy distribution. No human-in-the-loop preprocessing; raw API responses are stored verbatim.",
@@ -514,6 +514,6 @@
       ]
     }
   ],
-  "dateModified": "2026-05-04",
+  "dateModified": "2026-05-05",
   "numRecords": 37500
 }
