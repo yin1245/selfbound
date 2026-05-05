@@ -66,7 +66,8 @@ python code/scripts/eval_heldout_n6.py
 API endpoints and credentials are configured via environment variables in `code/baselines/capbound_session_api.py`. The released code has all keys redacted (`sk-REDACTED`); supply your own:
 
 - `DASHSCOPE_KEY` for Qwen/GLM/DeepSeek
-- Proxy endpoint for Claude/GPT via the `claude-zhongzhuan.cloud` (Claude) and `lucen.cc` (GPT) gateways
+- `OPENAI_API_KEY` and `OPENAI_API_BASE` (defaults to `https://api.openai.com`) for GPT models
+- `ANTHROPIC_API_KEY` and `ANTHROPIC_API_BASE` (defaults to `https://api.anthropic.com`) for Claude models
 
 ## Versioning
 

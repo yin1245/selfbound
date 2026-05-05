@@ -57,18 +57,21 @@ from classic_baselines_v4 import (
 # ============================================================
 # API routing config
 # ============================================================
-DASHSCOPE_KEY = "sk-REDACTED"
-DASHSCOPE_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+# All provider URLs are env-overridable so reviewers can substitute their own
+# gateway/proxy without code changes. Defaults are the official provider endpoints.
+DASHSCOPE_KEY = os.environ.get("DASHSCOPE_API_KEY", "sk-REDACTED")
+DASHSCOPE_URL = os.environ.get("DASHSCOPE_API_BASE", "https://dashscope.aliyuncs.com") + "/compatible-mode/v1/chat/completions"
 
-PROXY_KEY = "sk-REDACTED"
-PROXY_URL = "https://claude-zhongzhuan.cloud/v1/chat/completions"
-ANTHROPIC_PROXY_URL = "https://claude-zhongzhuan.cloud/v1/messages"
-# v18: linkapi.ai recharged 2026-05-01, use for Claude models
-LINKAPI_KEY = "sk-REDACTED"
-LINKAPI_URL = "https://linkapi.ai/v1/messages"
-# v50: GPT models route to lucen.cc (chat/completions)
-LUCEN_KEY = "sk-REDACTED"
-LUCEN_URL = "https://lucen.cc/v1/chat/completions"
+# OpenAI route (used for GPT-5.x family)
+PROXY_KEY = os.environ.get("OPENAI_API_KEY", "sk-REDACTED")
+PROXY_URL = os.environ.get("OPENAI_API_BASE", "https://api.openai.com") + "/v1/chat/completions"
+LUCEN_KEY = PROXY_KEY
+LUCEN_URL = PROXY_URL
+
+# Anthropic route (used for Claude family)
+ANTHROPIC_PROXY_URL = os.environ.get("ANTHROPIC_API_BASE", "https://api.anthropic.com") + "/v1/messages"
+LINKAPI_KEY = os.environ.get("ANTHROPIC_API_KEY", "sk-REDACTED")
+LINKAPI_URL = ANTHROPIC_PROXY_URL
 
 LOCAL_URL = "http://localhost:8100/v1/chat/completions"
 
