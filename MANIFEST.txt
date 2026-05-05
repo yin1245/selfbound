@@ -1,4 +1,4 @@
-SelfBound v1.1.16 - Anonymous submission bundle
+SelfBound v1.1.17 - Anonymous submission bundle
 ======================================================
 Total turn-records:     37500 (15 models × 50 sessions × 50 turns; uniform protocol)
 Per-model session JSONL: 15 files (data/sessions/)
@@ -8,7 +8,7 @@ Code modules:           code/baselines/ + code/scripts/
 Paper PDF (EN):         paper/SelfBound.pdf (NeurIPS, 9 main pages)
 Paper PDF (ZH):         paper/SelfBound_zh.pdf (accessibility translation)
 Croissant metadata:     croissant.json (validated v1.0)
-Phenomenon name:        Self-Boundary Collapse (introduced in v1.1.16 paper rev)
+Phenomenon name:        Self-Boundary Collapse (introduced in v1.1.17 paper rev)
 
 Anonymization status:
 - All file paths rewritten to ./selfbound/
