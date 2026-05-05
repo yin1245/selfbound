@@ -48,12 +48,12 @@
   },
   "@type": "sc:Dataset",
   "conformsTo": "http://mlcommons.org/croissant/1.0",
-  "name": "SelfBound",
+  "name": "LADDER",
   "alternateName": "CBB",
-  "description": "SelfBound is a diagnostic benchmark for LLM-agent self-knowledge under noisy interactive feedback. It releases 47,000+ session-turn JSONL traces collected by running 15 frontier and open-weights LLMs through a 50-session x 50-turn protocol on 20 MMLU subjects, paired with cross-family LLM-simulated users (75% in-expertise / 46% out-of-expertise reliability). Each turn records the question, the agent's answer and confidence, ground-truth correctness, the simulated user's natural-language feedback, and an in-expertise flag. The dataset enables evaluation of per-domain capability estimation methods via the Capability Boundary Fidelity (CBF) metric, separating three competing hypotheses (H1 output channel, H2 prior metacognition, H3 noise-robust online inference) through a five-level information ladder.",
-  "url": "https://anonymous.4open.science/r/selfbound",
+  "description": "LADDER is a diagnostic benchmark for LLM-agent self-knowledge under noisy interactive feedback. It releases 47,000+ session-turn JSONL traces collected by running 15 frontier and open-weights LLMs through a 50-session x 50-turn protocol on 20 MMLU subjects, paired with cross-family LLM-simulated users (75% in-expertise / 46% out-of-expertise reliability). Each turn records the question, the agent's answer and confidence, ground-truth correctness, the simulated user's natural-language feedback, and an in-expertise flag. The dataset enables evaluation of per-domain capability estimation methods via the Capability Boundary Fidelity (CBF) metric, separating three competing hypotheses (H1 output channel, H2 prior metacognition, H3 noise-robust online inference) through a five-level information ladder.",
+  "url": "https://anonymous.4open.science/r/ladder-bench",
   "license": "https://creativecommons.org/licenses/by/4.0/",
-  "version": "1.1.17",
+  "version": "1.1.18",
   "datePublished": "2026-05-07",
   "keywords": [
     "LLM evaluation",
@@ -68,7 +68,7 @@
     "benchmark"
   ],
   "isLiveDataset": false,
-  "citeAs": "@inproceedings{selfbound2026, title = {SelfBound: A Diagnostic Benchmark for LLM Agent Self-Knowledge under Noisy Feedback}, author = {Anonymous}, booktitle = {NeurIPS 2026 Datasets and Benchmarks Track}, year = {2026}}",
+  "citeAs": "@inproceedings{ladder2026, title = {LADDER: A Diagnostic Benchmark for LLM Agent Self-Knowledge under Noisy Feedback}, author = {Anonymous}, booktitle = {NeurIPS 2026 Datasets and Benchmarks Track}, year = {2026}}",
   "creator": {
     "@type": "Person",
     "name": "Anonymous (double-blind submission)"
@@ -99,7 +99,7 @@
       "@id": "anon-repo",
       "name": "anon-repo",
       "description": "Anonymous repository hosting all session JSONL files, baseline code, evaluation scripts, and held-out contamination control data.",
-      "contentUrl": "https://anonymous.4open.science/r/selfbound",
+      "contentUrl": "https://anonymous.4open.science/r/ladder-bench",
       "encodingFormat": "application/x-tar",
       "sha256": "PLACEHOLDER_SHA256_TO_BE_FILLED_AT_RELEASE"
     },

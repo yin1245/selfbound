@@ -1,9 +1,9 @@
-# SelfBound v1.0.0
+# LADDER v1.0.0
 
 > **Anonymous repository for NeurIPS 2026 Datasets & Benchmarks Track double-blind review.**
 
 A diagnostic benchmark for LLM-agent self-knowledge under noisy interactive feedback.
-SelfBound operationalizes three competing hypotheses about where agent self-knowledge
+LADDER operationalizes three competing hypotheses about where agent self-knowledge
 fails — H1 output channel, H2 prior metacognition, H3 noise-robust online inference — through
 a five-level information ladder (L0 raw confidence → L1 zero-shot prior → L2 noisy-feedback
 learners → L3 binary-label oracle → L4 full-statistic oracle).
@@ -21,7 +21,7 @@ learners → L3 binary-label oracle → L4 full-statistic oracle).
 ## Repository layout
 
 ```
-selfbound/
+ladder-bench/
 ├── croissant.json            # Validated Croissant 1.0 metadata
 ├── MANIFEST.txt              # Bundle stats
 ├── LICENSE-CODE              # MIT (covers code/)
@@ -39,8 +39,8 @@ selfbound/
 │   └── scripts/              # Evaluation drivers, contamination-control runners
 │
 └── paper/
-    ├── SelfBound.pdf       # Anonymized EN submission PDF (NeurIPS, 9 main pages)
-    ├── SelfBound_zh.pdf    # Chinese translation (for accessibility, not submission)
+    ├── LADDER.pdf       # Anonymized EN submission PDF (NeurIPS, 9 main pages)
+    ├── LADDER_zh.pdf    # Chinese translation (for accessibility, not submission)
     ├── main.tex                    # EN LaTeX source
     ├── main_zh.tex                 # ZH LaTeX source
     ├── references.bib              # Bibliography
@@ -83,8 +83,8 @@ python code/scripts/eval_heldout_n6.py
 ## Citing
 
 ```bibtex
-@inproceedings{selfbound2026,
-  title = {SelfBound: A Diagnostic Benchmark for LLM Agent Self-Knowledge under Noisy Feedback},
+@inproceedings{ladder2026,
+  title = {LADDER: A Diagnostic Benchmark for LLM Agent Self-Knowledge under Noisy Feedback},
   author = {Anonymous},
   booktitle = {NeurIPS 2026 Datasets and Benchmarks Track},
   year = {2026}
