@@ -73,6 +73,14 @@ ANTHROPIC_PROXY_URL = os.environ.get("ANTHROPIC_API_BASE", "https://api.anthropi
 LINKAPI_KEY = os.environ.get("ANTHROPIC_API_KEY", "sk-REDACTED")
 LINKAPI_URL = ANTHROPIC_PROXY_URL
 
+# Zhipu / bigmodel.cn (GLM family official endpoint)
+ZHIPU_KEY = os.environ.get("ZHIPU_API_KEY", "sk-REDACTED")
+ZHIPU_URL = os.environ.get("ZHIPU_API_BASE", "https://open.bigmodel.cn") + "/api/paas/v4/chat/completions"
+
+# DeepSeek official endpoint (separate from DashScope's re-host)
+DEEPSEEK_KEY = os.environ.get("DEEPSEEK_API_KEY", "sk-REDACTED")
+DEEPSEEK_URL = os.environ.get("DEEPSEEK_API_BASE", "https://api.deepseek.com") + "/v1/chat/completions"
+
 LOCAL_URL = "http://localhost:8100/v1/chat/completions"
 
 # Local models: model_name -> (model_path, port)
@@ -104,6 +112,11 @@ MODEL_ROUTES = {
     "claude-opus-4-6":  ("ANTHROPIC:" + LINKAPI_URL, LINKAPI_KEY, "claude-opus-4-6"),
     "claude-sonnet-4-6":("ANTHROPIC:" + LINKAPI_URL, LINKAPI_KEY, "claude-sonnet-4-6"),
     "claude-opus-4-7": ("ANTHROPIC:" + LINKAPI_URL, LINKAPI_KEY, "claude-opus-4-7"),
+    # New frontier additions (matched 1:1 with the latest OpenAI/Anthropic releases)
+    "qwen3.6-max-preview": (DASHSCOPE_URL, DASHSCOPE_KEY, "qwen3.6-max-preview"),
+    "qwen3.6-plus":     (DASHSCOPE_URL, DASHSCOPE_KEY, "qwen3.6-plus"),
+    "glm-5.1":          (ZHIPU_URL, ZHIPU_KEY, "glm-5.1"),
+    "deepseek-v4-pro":  (DEEPSEEK_URL, DEEPSEEK_KEY, "deepseek-v4-pro"),
 }
 
 _vllm_procs = {}  # port -> Popen

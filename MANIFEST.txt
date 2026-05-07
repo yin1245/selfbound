@@ -1,13 +1,22 @@
-LADDER v1.1.21 - Anonymous submission bundle
+LADDER v1.1.46 - Anonymous submission bundle
 ======================================================
-Total turn-records:     37500 (15 models × 50 sessions × 50 turns; uniform protocol)
+Total turn-records:      37,500 (15 session models × 50 sessions × 50 turns; uniform protocol)
 Per-model session JSONL: 15 files (data/sessions/)
 Aggregate-metric files:  15 files (data/aggregates/; frontier rows include v18b LSA/ZS rerun)
-Held-out n=6 control:   1 file (data/heldout_n6_extension.json)
-Code modules:           code/baselines/ + code/scripts/
-Paper PDF (EN):         paper/LADDER.pdf (NeurIPS, 9 main pages)
-Croissant metadata:     croissant.json (validated v1.0)
-Phenomenon name:        Self-Boundary Collapse (introduced in v1.1.21 paper rev)
+
+Held-out contamination control (MMLU-Pro + BBH):
+  data/heldout_n6_extension.json       — original 6 GPT/Claude frontier (representative bundled rows: GPT-5.5, Claude-Opus-4-7);
+                                          full per-model breakdown for the 6 GPT/Claude subset is in paper Tables 6 and 7.
+  data/heldout_n3_new_frontier.json    — 3 new frontier extensions: DeepSeek-V4-Pro, Qwen3.6-Max-Preview, Qwen3.6-Plus.
+  Combined: n=9 frontier MMLU-Pro / BBH controls (paper Tables 6 and 7).
+
+Code modules:            code/baselines/ + code/scripts/
+Paper PDF (EN):          paper/LADDER.pdf (NeurIPS Datasets & Benchmarks Track, 9 main pages + appendix)
+Paper PDF (ZH):          paper/LADDER_zh.pdf
+Stamped paper revisions: paper/ladder_v1.1.46_en_n9heldout.pdf and paper/ladder_v1.1.46_zh_n9heldout.pdf
+Croissant metadata:      croissant.json (Croissant 1.0 + NeurIPS RAI metadata)
+Bilingual RAI reference: docs/croissant_rai_zh.md (Chinese gloss of all 18 rai:* fields, for author cross-check only)
+Phenomenon name:         Self-Boundary Collapse (introduced in the paper)
 
 Anonymization status:
 - All file paths rewritten to ./ladder-bench/
